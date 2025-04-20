@@ -1,5 +1,5 @@
 # app/routers/tg_bot.py
-
+#
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
 from app.config import TELEGRAM_TOKEN
 from app.routers.handlers import start, help_command, echo
