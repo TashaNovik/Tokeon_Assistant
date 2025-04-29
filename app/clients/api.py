@@ -1,8 +1,8 @@
 import requests
 
+from app.config import settings
 
-def get_iam_token(oauth_token="y0__xD8_K6MCBjB3RMg9sPt8RIwyYivjAhazOSX7kyjRB8mzebu7l9FJAVbDQ"):
-    # Обменивает OAuth-токен на IAM-токен
+def get_token(oauth_token) -> str:
     url = "https://iam.api.cloud.yandex.net/iam/v1/tokens"
     headers = {"Content-Type": "application/json"}
     data = {"yandexPassportOauthToken": oauth_token}
@@ -12,21 +12,17 @@ def get_iam_token(oauth_token="y0__xD8_K6MCBjB3RMg9sPt8RIwyYivjAhazOSX7kyjRB8mze
         response.raise_for_status()
         return response.json().get("iamToken")
     except requests.exceptions.RequestException as e:
-        print(f"Ошибка при получении токена: {e}")
+        print(f"Fail to get token: {e}")
         return None
 
-
-# Ваш OAuth-токен - уже получен актуальный для работы
-# Инструкция для подключения: https://yandex.cloud/ru/docs/iam/operations/iam-token/create#exchange-token
-
-oauth_token = "y0__xD8_K6MCBjB3RMg9sPt8RIwyYivjAhazOSX7kyjRB8mzebu7l9FJAVbDQ"
-iam_token = get_iam_token(oauth_token)
-
-# folder_id уже актуальная, берется тут: https://console.yandex.cloud/folders/b1glp0iqac5h7ihhmh7b - b1glp0iqac5h7ihhmh7b
-# В данном случае автосозданная дефолтная
-
-
-def send_to_yagpt(iam_token, prompt_text, system_prompt=None, temperature=0.6, max_tokens=2000, folder_id="b1glp0iqac5h7ihhmh7b"):
+def send_request_to_yagpt(
+        iam_token,
+        prompt_text,
+        system_prompt=None,
+        temperature=0.6,
+        max_tokens=2000,
+        folder_id=settings.ya_gpt.folder_id
+) -> str:
     """
     Отправляет запрос к Yandex GPT API
 
@@ -78,12 +74,8 @@ def send_to_yagpt(iam_token, prompt_text, system_prompt=None, temperature=0.6, m
 
         return result['result']['alternatives'][0]['message']['text']
     except requests.exceptions.RequestException as e:
-        print(f"Ошибка при запросе к API: {e}")
+        print(f"Fail to send API request: {e}")
         return None
     except (KeyError, IndexError) as e:
-        print(f"Ошибка при обработке ответа: {e}")
+        print(f"Fail to get response: {e}")
         return None
-
-
-# можно протестировать
-# print(send_to_yagpt(iam_token, prompt_text="сколько будет 10!"))

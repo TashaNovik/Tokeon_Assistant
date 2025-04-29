@@ -1,18 +1,22 @@
-# 1. Базовый образ (лёгкий вариант Python 3.9)
-FROM python:3.9-slim
+FROM python:3.11-slim
 
-# 2. Определяем рабочую директорию внутри контейнера
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# 3. Копируем файл с зависимостями
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends build-essential \
+ && pip install --upgrade pip \
+ && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
-
-# 4. Устанавливаем зависимости
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 5. Копируем весь проект (исключая то, что прописано в .dockerignore)
+RUN python - <<'EOF'
+import nltk
+nltk.download('stopwords')
+EOF
+
 COPY . .
 
-# 6. При запуске контейнера выполняем команду - запуск Python
-# (Указываем, что у нас в main.py стартует и Telegram-бот, и веб-приложение)
-CMD [ "python", "app/main.py" ]
+EXPOSE 8000
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

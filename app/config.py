@@ -1,24 +1,34 @@
-# app/config.py
-#
-import os
-from pathlib import Path
-from dotenv import load_dotenv
+import yaml
+from pydantic import BaseModel
 
-# ----------------------------
-# MODULE: Environment Configuration
-# DESCRIPTION:
-#  - Загружает переменные окружения из .env
-#  - Предоставляет токен для Telegram-бота
-# ----------------------------
+class TelegramConfig(BaseModel):
+    token: str
+    webhook_path: str
 
-# Определяем путь к файлу .env в корне проекта
-env_path = Path(__file__).resolve().parent.parent / ".env"
-load_dotenv(env_path)  # Загружаем переменные
+class YaGPTConfig(BaseModel):
+    api_key: str
+    folder_id: str
+    login: str
+    password: str
 
-# Получаем токен из окружения
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-print(f"Токен из .env: {TELEGRAM_TOKEN}")  # логируем для проверки
+class KnowledgeBaseConfig(BaseModel):
+    db_url: str
+    top_k: int = 5
 
-# RESPONSIBILITY: прерываем запуск, если токен не задан
-if not TELEGRAM_TOKEN:
-    raise ValueError("Токен не найден в .env!")
+class LoggingConfig(BaseModel):
+    level: str = "INFO"
+    format: str = "%(asctime)s %(levelname)s %(name)s: %(message)s"
+
+class Settings(BaseModel):
+    telegram: TelegramConfig
+    ya_gpt: YaGPTConfig
+    knowledge_base: KnowledgeBaseConfig
+    logging: LoggingConfig
+
+    @classmethod
+    def load(cls, path: str = "config.yaml") -> "Settings":
+        with open(path, "r") as f:
+            data = yaml.safe_load(f)
+        return cls(**data)
+
+settings = Settings.load()

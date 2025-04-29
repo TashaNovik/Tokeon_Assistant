@@ -7,7 +7,7 @@ from nltk.tokenize import sent_tokenize
 from nltk.corpus import stopwords
 from gensim.models import FastText
 from nltk.data import find
-from chunking import knowledge_base_runner
+from app.clients.chunking import knowledge_base_runner
 
 
 # Лемматизация текста

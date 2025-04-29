@@ -23,7 +23,6 @@ async def question_preparation(question):
 
     question_embedding = model.encode(question).tolist()
 
-    # сохраняем имя коллекции вместе с результатами
     tasks = [(col, async_search(client, col, question_embedding)) for col in collection_names]
     results = await asyncio.gather(*[task[1] for task in tasks])
 
