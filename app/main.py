@@ -9,9 +9,9 @@ from fastapi import FastAPI
 from telegram.ext import Application
 from psutil import cpu_count
 
-from app.api.router.telegram import router as telegram_router
-from app.api.handlers.telegram import create_bot
-from app.clients.api import get_iam_token, send_to_yagpt
+from app.api.router.webhook import router as telegram_router
+from app.api.router.telegram import create_bot
+from app.clients.api import get_token, send_request_to_yagpt
 from app.clients.chunking import chunking, knowledge_base_runner
 from app.clients.qdrant_sender import async_send
 from app.clients.question_processor import question_preparation
@@ -123,7 +123,7 @@ async def main(question=None, base_directory=None):
     if question is not None:
 
         lemma_task = asyncio.to_thread(lemmatize_ru, question)
-        iam_token_task = asyncio.to_thread(get_iam_token())
+        iam_token_task = asyncio.to_thread(get_token())
 
         question_lemma, iam_token = await asyncio.gather(
             lemma_task,
@@ -134,7 +134,7 @@ async def main(question=None, base_directory=None):
 
         search_task = question_preparation(question_top)
         answer_task = asyncio.to_thread(
-            send_to_yagpt,
+            send_request_to_yagpt,
             iam_token,
             await search_task,
             system_prompt=f"Найди в тексте точный ответ на вопрос '{question}' и напиши краткий ответ. Если ответа нет - верни None",

@@ -2,7 +2,7 @@ telegram:
   token: "7621336869:AAE-d3lH-Y7cH_ljKGkDyhkPWwpxDfonRXQ"
   webhook_path: "/webhook/7621336869:AAE-d3lH-Y7cH_ljKGkDyhkPWwpxDfonRXQ"
 
-yagpt:
+ya_gpt:
   api_key: "y0__xD8_K6MCBjB3RMg9sPt8RIwyYivjAhazOSX7kyjRB8mzebu7l9FJAVbDQ"
   login: "hackaton-team1@yandex.ru"
   password: "MIPT2025dev"

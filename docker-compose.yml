@@ -1,0 +1,28 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ./qdrant_storage:/qdrant/storage:z
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kb_bot
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+      - ./knowledge_base:/app/knowledge_base
+      - ./context:/context
+      - ./fasttext:/app/fasttext
+    depends_on:
+      - qdrant
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
