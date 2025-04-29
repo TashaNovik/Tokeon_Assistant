@@ -1,42 +1,75 @@
-#Release pip 24.0
-# FastAPI и сервер для него
-fastapi==0.96.0
-uvicorn==0.22.0
-
-# Telegram-бот
-python-telegram-bot==20.4
-
-# Загрузка переменных окружения из .env
-python-dotenv==1.0.0
-
+annotated-types==0.7.0
+anyio==4.9.0
+async-timeout==4.0.3
+certifi==2025.4.26
+charset-normalizer==3.4.1
+click==8.1.8
+DAWG-Python==0.7.2
+docopt==0.6.2
+exceptiongroup==1.2.2
+fastapi==0.109.2
+filelock==3.18.0
+fsspec==2025.3.2
+gensim==4.3.3
+grpcio==1.71.0
+h11==0.16.0
+h2==4.2.0
+hpack==4.1.0
+httpcore==1.0.9
+httpx==0.28.1
+huggingface-hub==0.30.2
+hyperframe==6.1.0
+idna==3.10
+Jinja2==3.1.6
+joblib==1.4.2
+jsonpatch==1.33
+jsonpointer==3.0.0
+langchain==0.3.24
+langchain-core==0.3.56
+langchain-text-splitters==0.3.8
+langsmith==0.3.38
 loguru==0.7.0
-
-
-# *&---------------------------------------------------------------------*
-# *& КРАТКАЯ ИНСТРУКЦИЯ ПО ЗАПУСКУ TG-бота на локальном компьютере                                    
-# *&---------------------------------------------------------------------*
-# * Шаг 1. Создание виртуального окружения                                 
-# *    Команда: python -m venv new_venv                                   
-# *    -> Создаёт изолированную папку new_venv (можно назвать как угодно). 
-# *    -> Пакеты внутри окружения не затрагивают глобальные библиотеки.                              
-# *                                                                       
-# * Шаг 2. Разрешение выполнения скриптов в PowerShell                    
-# *    Команда: Set-ExecutionPolicy RemoteSigned -Scope CurrentUser       
-# *    -> Разрешает запуск локальных скриптов без подписи                  
-# *    -> Требует подписи для скриптов из интернета                        
-# *    -> Применимо только для текущего пользователя, другие не затрагивает        
-# *                                                                       
-# * Шаг 3. Активация виртуального окружения                               
-# *    Команда: .\new_venv\Scripts\activate.ps1                            
-# *    -> Обязательно ставьте точку и слеш в начале                        
-# *    -> Перенастраивает python и pip на работу внутри new_venv          
-# *    -> В приглашении появится префикс (new_venv)                                            
-# *                                                                       
-# * Шаг 4. Запуск ASGI‑сервера Uvicorn                                     
-# *    Команда: uvicorn app.main:app --host 0.0.0.0 --port 8000           
-# *    -> app.main:app указывает на модуль app/main.py и экземпляр app     
-# *    -> --host 0.0.0.0 делает сервер доступным на всех интерфейсах      
-# *    -> --port 8000 задаёт порт для входящих HTTP‑запросов                                  
-# *                                                                       
-# * Ваш TG успешно запущен и готов к работе.            #  
-                   
+MarkupSafe==3.0.2
+mpmath==1.3.0
+networkx==3.4.2
+nltk==3.9.1
+numpy==1.26.4
+orjson==3.10.17
+packaging==24.2
+pillow==11.2.1
+portalocker==2.10.1
+protobuf==6.30.2
+psutil==7.0.0
+pydantic==2.11.3
+pydantic_core==2.33.1
+pymorphy2==0.9.1
+pymorphy2-dicts-ru==2.4.417127.4579844
+python-dotenv==1.0.0
+python-telegram-bot==22.0
+PyYAML==6.0.2
+qdrant-client==1.14.2
+regex==2024.11.6
+requests==2.32.3
+requests-toolbelt==1.0.0
+safetensors==0.5.3
+scikit-learn==1.6.1
+scipy==1.13.1
+sentence-transformers==4.1.0
+smart-open==7.1.0
+sniffio==1.3.1
+SQLAlchemy==2.0.40
+starlette==0.36.3
+sympy==1.14.0
+telegram==0.0.1
+tenacity==9.1.2
+threadpoolctl==3.6.0
+tokenizers==0.21.1
+torch==2.7.0
+tqdm==4.67.1
+transformers==4.51.3
+typing-inspection==0.4.0
+typing_extensions==4.13.2
+urllib3==2.4.0
+uvicorn==0.22.0
+wrapt==1.17.2
+zstandard==0.23.0

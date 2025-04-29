@@ -19,7 +19,7 @@ async def async_send(filechunks, filename, rewrite=False):
 
     size = 1024
     collection_name = filename
-    
+
     try:
         existing_collections = await client.get_collections()
         exists = any(col.name == collection_name for col in existing_collections.collections)
@@ -35,8 +35,7 @@ async def async_send(filechunks, filename, rewrite=False):
             collection_name=collection_name,
             vectors_config=VectorParams(size=size, distance=Distance.DOT)
         )
-        
-        # Функция для вставки батча
+
         async def upsert_batch(points):
             converted = [
                 PointStruct(**p) if isinstance(p, dict) else p
@@ -56,7 +55,7 @@ async def async_send(filechunks, filename, rewrite=False):
             tasks.append(upsert_batch(batch))
             
         await asyncio.gather(*tasks)
-        
+
     except Exception as e:
         print(f"Error processing {collection_name}: {str(e)}")
     finally:
