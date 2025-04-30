@@ -11,10 +11,6 @@ class YaGPTConfig(BaseModel):
     login: str
     password: str
 
-class KnowledgeBaseConfig(BaseModel):
-    db_url: str
-    top_k: int = 5
-
 class LoggingConfig(BaseModel):
     level: str = "INFO"
     format: str = "%(asctime)s %(levelname)s %(name)s: %(message)s"
@@ -22,7 +18,6 @@ class LoggingConfig(BaseModel):
 class Settings(BaseModel):
     telegram: TelegramConfig
     ya_gpt: YaGPTConfig
-    knowledge_base: KnowledgeBaseConfig
     logging: LoggingConfig
 
     @classmethod
