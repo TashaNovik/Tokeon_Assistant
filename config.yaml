@@ -1,6 +1,6 @@
 telegram:
-  token: "7621336869:AAE-d3lH-Y7cH_ljKGkDyhkPWwpxDfonRXQ"
-  webhook_path: "/webhook/7621336869:AAE-d3lH-Y7cH_ljKGkDyhkPWwpxDfonRXQ"
+  token: "7621336869:AAE9rh-v_H9-Zzk11Wis_9j-2deBa4E7HvA"
+  webhook_path: "/webhook/7621336869:AAE9rh-v_H9-Zzk11Wis_9j-2deBa4E7HvA"
 
 ya_gpt:
   api_key: "y0__xD8_K6MCBjB3RMg9sPt8RIwyYivjAhazOSX7kyjRB8mzebu7l9FJAVbDQ"
