@@ -8,10 +8,6 @@ ya_gpt:
   password: "MIPT2025dev"
   folder_id: "b1glp0iqac5h7ihhmh7b"
 
-knowledge_base:
-  db_url: "postgresql://user:password@localhost:5432/knowledge_db"
-  top_k: 5
-
 logging:
   level: "INFO"
   format: "%(asctime)s %(levelname)s %(name)s: %(message)s"

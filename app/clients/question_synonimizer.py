@@ -1,3 +1,16 @@
+# app/clients/question_synonimizer.py
+
+import inspect
+from collections import namedtuple
+
+# Monkey-patch for pymorphy2 compatibility on Python >=3.11
+# Provide getargspec signature that matches argparse
+ArgSpec = namedtuple('ArgSpec', 'args varargs varkw defaults')
+def getargspec(func):
+    spec = inspect.getfullargspec(func)
+    return ArgSpec(args=spec.args, varargs=spec.varargs, varkw=spec.varkw, defaults=spec.defaults)
+inspect.getargspec = getargspec
+
 import re
 import os
 import nltk
@@ -28,12 +41,11 @@ def preprocess(sentence):
     try:
         find('corpora/stopwords')
     except LookupError:
-        nltk.download('stopwords', download_dir="nltk")
+        nltk.download('stopwords', download_dir=nltk_dir)
     stop_words = set(stopwords.words('russian'))
 
     words = lemmatize_ru(sentence)
-    filtered_words = [word for word in words if word.isalpha()
-                      and word not in stop_words]
+    filtered_words = [word for word in words if word.isalpha() and word not in stop_words]
     return filtered_words
 
 
@@ -47,35 +59,44 @@ def learning_model(processed_sentences):
         workers=4
     )
     model.build_vocab(processed_sentences)
-    model.train(processed_sentences, total_examples=len(
-        processed_sentences), epochs=10)
+    model.train(processed_sentences, total_examples=len(processed_sentences), epochs=10)
     model_path = os.path.join("fasttext", "fasttext.model")
     model.save(model_path)
 
 
-def learning_synonims(file):
-    with open(file, "r", encoding="utf-8") as file:
-        text = file.read()
+def learning_synonims(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
+        text = f.read()
     sentences = sent_tokenize(text, language='russian')
     processed_sentences = [preprocess(sentence) for sentence in sentences]
     return processed_sentences
 
 # Синонимизация вопроса
 def synonimize_question(question, model):
-    question = preprocess(question)
+    question_tokens = preprocess(question)
     synonymized_question = []
-    for word in question:
-        if word in model.wv:  # Проверяем, есть ли слово в модели
-            synonyms = model.wv.most_similar(word, topn=2)  # Топ-2 синонима
+    for word in question_tokens:
+        if word in model.wv:
+            synonyms = model.wv.most_similar(word, topn=2)
             synonymized_question.append((word, synonyms))
         else:
-            synonymized_question.append((word, []))  # Если слова нет в модели
+            synonymized_question.append((word, []))
     return synonymized_question
 
 
 def result_question(question):
     questions = []
-    model_path = os.path.join("fasttext", "fasttext.model")
+    model_dir = "fasttext"
+    model_path = os.path.join(model_dir, "fasttext.model")
+    if not os.path.exists(model_path):
+        full_ctx = context(None)
+        if not full_ctx:
+            raise RuntimeError(
+                "FastText model and context are missing. "
+                "Please run initial ingestion to build the knowledge base context and train the model."
+            )
+        learning_model(full_ctx)
+
     model = FastText.load(model_path)
 
     synonyms = synonimize_question(question, model)
