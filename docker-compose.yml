@@ -12,6 +12,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: tokeon_assistant-app
     container_name: kb_bot
     ports:
       - "8000:8000"
@@ -26,3 +27,6 @@ services:
       uvicorn app.main:app
       --host 0.0.0.0
       --port 8000
+    environment: # 
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333

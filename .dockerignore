@@ -1,0 +1,14 @@
+qdrant_storage/
+knowledge_base/
+context/
+fasttext/
+*.log
+
+__pycache__/
+*.pyc
+build/
+data/
+models/
+
+.env
+.git/
