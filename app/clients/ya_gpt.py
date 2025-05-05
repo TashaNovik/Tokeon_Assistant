@@ -5,10 +5,11 @@ from app.clients.question_processor import question_preparation
 
 from app.config import settings
 
+
 async def answer_from_knowledge_base(raw_q: str) -> str:
     lemmas = await to_thread(lemmatize_ru, raw_q)
-    top_q  = result_question(" ".join(lemmas))
-    prepared = question_preparation(top_q)
+    top_q = result_question(" ".join(lemmas))
+    prepared = await question_preparation(top_q)  # await
     iam = await to_thread(get_token, settings.ya_gpt.api_key)
     answer = await to_thread(
         send_request_to_yagpt,

@@ -1,4 +1,5 @@
 import asyncio
+import os
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
 from itertools import islice
@@ -11,11 +12,11 @@ def batched(iterable, batch_size):
 
 async def async_send(filechunks, filename, rewrite=False):
     client = AsyncQdrantClient(
-        host="localhost",
-        port=6333,
+        host=os.getenv("QDRANT_HOST", "qdrant"),  # <— сейчас docker-dns имя
+        port=int(os.getenv("QDRANT_PORT", 6333)),
         prefer_grpc=True,
         timeout=120 
-    )
+    )    
 
     size = 1024
     collection_name = filename
