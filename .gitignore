@@ -13,6 +13,12 @@ myenv/
 
 *.env
 
-config.yaml
+*/config.yaml
 
 __pycache__
+
+*~
+knowledge_base/
+fasttext
+qdrant_storage
+/context/context.json
