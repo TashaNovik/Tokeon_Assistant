@@ -9,6 +9,16 @@ model = SentenceTransformer("intfloat/multilingual-e5-large")
 
 
 async def async_search(client, collection, question_embedding):
+    """Perform an asynchronous similarity search on a Qdrant collection.
+
+        Args:
+            client: AsyncQdrantClient instance.
+            collection: Name of the collection to search.
+            question_embedding: Embedding vector of the query.
+
+        Returns:
+            List of search hits with scores and payloads.
+        """
     return await client.search(
         collection_name=collection,
         query_vector=question_embedding,
@@ -19,6 +29,15 @@ async def async_search(client, collection, question_embedding):
 
 
 async def question_preparation(question):
+    """Prepare and perform a semantic search for the question across all Qdrant collections,
+        then retrieve and concatenate the top 5 unique matching chunk texts.
+
+        Args:
+            question: User question text.
+
+        Returns:
+            Concatenated string of top relevant chunk texts.
+    """
     client = AsyncQdrantClient(
         host=os.getenv("QDRANT_HOST", "qdrant"),
         port=int(os.getenv("QDRANT_PORT", 6333)),

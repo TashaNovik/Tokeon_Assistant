@@ -15,14 +15,22 @@ knowledge_base_router = APIRouter()
     description="Запускает процесс обновления базы знаний в векторной базе."
 )
 async def update_knowledge_base(zip_file: UploadFile = File(...)):
-    """
-    Эндпоинт для обновления базы знаний.
+        """
+    Updates the knowledge base from the uploaded ZIP file.
+
+    Args:
+        zip_file (UploadFile): ZIP file containing data to update the knowledge base.
+
+    Returns:
+        dict: Message indicating successful knowledge base update.
+
+    Raises:
+        HTTPException: If an error occurs during the update, returns a 500 error with details.
     """
     try:
-
         logger.info(f"Renew knowledge base by zip_file: {zip_file}")
 
-        # Save the uploaded file to a temporary location
+
         temp_file_path = f"/tmp/{zip_file.filename}"
         with open(temp_file_path, "wb") as buffer:
             buffer.write(await zip_file.read())
@@ -34,10 +42,11 @@ async def update_knowledge_base(zip_file: UploadFile = File(...)):
             logger.info(f"Extracting zip_file to {data_folder}")
             zip_ref.extractall(data_folder)
 
-        await renew_knowledge_base(data_folder)  # Вызов функции main для обновления базы знаний
+        await renew_knowledge_base(data_folder)
         return {"message": "База знаний успешно обновлена."}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
+

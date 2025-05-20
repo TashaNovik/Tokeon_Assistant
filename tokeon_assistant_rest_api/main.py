@@ -7,14 +7,26 @@ import logging
 logger = logging.getLogger(__name__)
 
 def configure_logging() -> None:
-    """Configure logging for the application."""
+    """
+    Configure logging settings for the application.
+
+    Sets the logging level to INFO and defines the log message format.
+    """
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
 
 def create_app() -> FastAPI:
-    """Factory to create and configure the FastAPI app."""
+    """
+    Create and configure the FastAPI application instance.
+
+    Configures logging, initializes the FastAPI app with metadata,
+    adds a health check endpoint, and includes the assistant router.
+
+    Returns:
+        FastAPI: Configured FastAPI application instance.
+    """
     configure_logging()
 
     app = FastAPI(

@@ -7,10 +7,22 @@ router = APIRouter()
 @router.post("/webhook/{token}")
 async def telegram_webhook(token: str, request: Request) -> dict:
     """
-    Receive webhook updates from Telegram.
-    1) Validate the webhook token in the URL.
-    2) Parse incoming JSON into a Telegram Update.
-    3) Enqueue the update for the polling bot.
+    Receive and process Telegram webhook updates.
+
+    Steps:
+    1) Validate the token provided in the webhook URL against the bot token.
+    2) Parse the incoming JSON payload into a Telegram Update object.
+    3) Enqueue the update into the bot's update queue for asynchronous processing.
+
+    Args:
+        token (str): Webhook token from the URL path to validate the request.
+        request (Request): FastAPI request object containing the incoming webhook data.
+
+    Raises:
+        HTTPException: If the token does not match the bot's token (401 Unauthorized).
+
+    Returns:
+        dict: A JSON response confirming the update was accepted.
     """
     bot: Application = request.app.state.bot
 

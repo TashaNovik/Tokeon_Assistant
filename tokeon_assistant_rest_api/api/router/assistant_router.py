@@ -15,9 +15,18 @@ logger = logging.getLogger(__name__)
     description="Принимает вопрос пользователя, генерирует ответ с помощью RAG и возвращает ответ вместе с уникальным ID."
 )
 async def ask_assistant(request_data: AskRequest):
-    """
-    Обрабатывает вопрос пользователя и возвращает ответ.
-    Генерирует уникальный `answer_id` для каждого ответа.
+    """Process a user's question and return a generated answer.
+
+    Generates a unique `answer_id` for each response.
+
+    Args:
+        request_data: An AskRequest object containing the user's question.
+
+    Returns:
+        AskResponse: The generated answer and its unique identifier.
+
+    Raises:
+        HTTPException: If an internal server error occurs during processing.
     """
     question = request_data.query
     generated_answer_id = uuid.uuid4() # Генерируем ID для этого конкретного ответа
@@ -48,9 +57,19 @@ async def ask_assistant(request_data: AskRequest):
     description="Позволяет пользователю отправить реакцию (positive/negative/neutral) и опциональный комментарий на конкретный ответ, идентифицированный по answer_id."
 )
 async def submit_feedback(answer_id: uuid.UUID, feedback_data: FeedbackRequest):
-    """
-    Принимает обратную связь на конкретный ответ.
-    Логирует фидбек для дальнейшего анализа.
+    """Receive user feedback for a specific answer.
+
+    Logs the feedback for further analysis.
+
+    Args:
+        answer_id: UUID of the answer being reviewed.
+        feedback_data: FeedbackRequest object containing reaction and optional comment.
+
+    Returns:
+        Response: HTTP 202 Accepted response indicating successful receipt.
+
+    Raises:
+        HTTPException: If an internal server error occurs during feedback processing.
     """
     try:
         logging.info(
