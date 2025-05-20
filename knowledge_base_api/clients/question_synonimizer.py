@@ -1,5 +1,3 @@
-# app/clients/question_synonimizer.py
-
 import inspect
 from collections import namedtuple
 import logging
@@ -10,9 +8,22 @@ logger = logging.getLogger(__name__)
 # Monkey-patch for pymorphy2 compatibility on Python >=3.11
 # Provide getargspec signature that matches argparse
 ArgSpec = namedtuple('ArgSpec', 'args varargs varkw defaults')
+
+
 def getargspec(func):
+    """
+    Compatibility patch for pymorphy2 on Python 3.11+, replaces inspect.getargspec.
+
+    Args:
+        func (callable): Function to analyze.
+
+    Returns:
+        ArgSpec: Named tuple with function arguments.
+    """
     spec = inspect.getfullargspec(func)
     return ArgSpec(args=spec.args, varargs=spec.varargs, varkw=spec.varkw, defaults=spec.defaults)
+
+
 inspect.getargspec = getargspec
 
 import re
@@ -27,21 +38,38 @@ from nltk.data import find
 from tokeon_assistant_rest_api.clients.chunking import knowledge_base_runner
 
 
-# Лемматизация текста
 def lemmatize_ru(text):
+    """
+    Lemmatizes Russian text and returns a list of normalized words.
+
+    Args:
+        text (str): Input text.
+
+    Returns:
+        list[str]: List of lemmas (normalized word forms).
+    """
     morph = MorphAnalyzer()
     words = re.findall(r'\b\w+\b', text.lower())
     lemmas = [morph.parse(word)[0].normal_form for word in words]
     return lemmas
 
-# Предобработка текста
+
 def preprocess(sentence):
+    """
+    Preprocesses a sentence: lemmatization, stop-word and non-alphabetic token filtering.
+
+    Args:
+        sentence (str): Input sentence.
+
+    Returns:
+        list[str]: List of cleaned and lemmatized words.
+    """
     current_dir = os.path.dirname(__file__)
     nltk_dir = os.path.join(current_dir, "nltk")
     os.makedirs(nltk_dir, exist_ok=True)
     nltk.data.path.append(nltk_dir)
 
-    # Инициализация stopwords один раз
+
     try:
         find('corpora/stopwords')
     except LookupError:
@@ -53,8 +81,13 @@ def preprocess(sentence):
     return filtered_words
 
 
-# Обучение модели FastText
 def learning_model(processed_sentences):
+    """
+    Trains a FastText model on the processed sentences and saves it.
+
+    Args:
+        processed_sentences (list[list[str]]): List of sentences where each is a list of tokens.
+    """
     logger.info("Learning model... by sentences: " + str(len(processed_sentences)))
     os.makedirs("fasttext", exist_ok=True)
     model = FastText(
@@ -70,14 +103,33 @@ def learning_model(processed_sentences):
 
 
 def learning_synonims(file_path):
+    """
+    Reads text from a file, splits it into sentences, and preprocesses them.
+
+    Args:
+        file_path (str): Path to the text file.
+
+    Returns:
+        list[list[str]]: List of preprocessed sentences with tokens.
+    """
     with open(file_path, "r", encoding="utf-8") as f:
         text = f.read()
     sentences = sent_tokenize(text, language='russian')
     processed_sentences = [preprocess(sentence) for sentence in sentences]
     return processed_sentences
 
-# Синонимизация вопроса
+
 def synonimize_question(question, model):
+    """
+    Retrieves synonyms for each word in the question using a trained FastText model.
+
+    Args:
+        question (str): Input question.
+        model (FastText): Trained FastText model.
+
+    Returns:
+        list[tuple(str, list)]: List of tuples (word, list of similar words with scores).
+    """
     question_tokens = preprocess(question)
     synonymized_question = []
     for word in question_tokens:
@@ -90,6 +142,18 @@ def synonimize_question(question, model):
 
 
 def result_question(question):
+    """
+    Constructs an expanded question with synonyms, training the model if needed.
+
+    Args:
+        question (str): Input question.
+
+    Returns:
+        str: String with the original question and added synonyms.
+
+    Raises:
+        RuntimeError: If the model and context are missing.
+    """
     questions = []
     model_dir = "fasttext"
     model_path = os.path.join(model_dir, "fasttext.model")
@@ -112,9 +176,8 @@ def result_question(question):
     synonyms = synonimize_question(question, model)
     synonymized_question = []
     for word, word_synonyms in synonyms:
-        synonymized_question.append(word)  # Добавляем исходное слово
-        if word_synonyms:  # Если есть синонимы
-            # Добавляем первые 2 синонима из word_synonyms, можно сократить до 1
+        synonymized_question.append(word)
+        if word_synonyms:
             synonymized_question.extend([syn[0] for syn in word_synonyms[:2]])
     synonymized_question = list(set(synonymized_question))
     synonymized_question = " ".join(synonymized_question)
@@ -122,8 +185,16 @@ def result_question(question):
     return synonymized_question
 
 
-
 def context(base_directory):
+    """
+    Loads or creates context from knowledge base files and saves to context.json.
+
+    Args:
+        base_directory (str or None): Path to the knowledge base. If None, loads from context.json.
+
+    Returns:
+        list: List of tokenized sentences for the entire context.
+    """
     logger.info(f"Searching context files in the base directory: {base_directory}")
     context_dir = os.path.join(os.getcwd(), "context")
     logger.info(f"Searching context files in the context dir: {context_dir}")

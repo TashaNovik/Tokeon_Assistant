@@ -3,6 +3,14 @@ import requests
 from tokeon_assistant_rest_api.config import settings
 
 def get_token(oauth_token) -> str:
+    """Obtain IAM token from Yandex using OAuth token.
+
+        Args:
+            oauth_token: OAuth token from Yandex Passport.
+
+        Returns:
+            IAM token string if successful, otherwise None.
+        """
     url = "https://iam.api.cloud.yandex.net/iam/v1/tokens"
     headers = {"Content-Type": "application/json"}
     data = {"yandexPassportOauthToken": oauth_token}
@@ -23,16 +31,18 @@ def send_request_to_yagpt(
         max_tokens=2000,
         folder_id=settings.ya_gpt.folder_id
 ) -> str:
-    """
-    Отправляет запрос к Yandex GPT API
+    """Send a request to Yandex GPT API and return the generated text.
 
-    :param folder_id: Идентификатор каталога Yandex Cloud
-    :param iam_token: IAM-токен для аутентификации
-    :param prompt_text: Текст запроса пользователя
-    :param system_prompt: Системный промпт (опционально)
-    :param temperature: Креативность ответа (0-1)
-    :param max_tokens: Максимальное количество токенов в ответе
-    :return: Ответ от API в виде строки
+    Args:
+        iam_token: IAM token for authentication.
+        prompt_text: User's prompt text.
+        system_prompt: Optional system prompt to guide the model.
+        temperature: Sampling temperature for creativity (0 to 1).
+        max_tokens: Maximum number of tokens in the response.
+        folder_id: Yandex Cloud folder ID.
+
+    Returns:
+        Generated response text from the API if successful, otherwise None.
     """
     url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
 

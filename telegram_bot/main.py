@@ -19,10 +19,13 @@ def configure_logging() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Manage the application lifecycle:
-      - Start the Telegram bot in polling mode on startup
-      - Stop the Telegram bot cleanly on shutdown
+    """Manage application lifecycle: start and stop Telegram bot.
+
+    On startup, initializes and starts the Telegram bot in polling mode.
+    On shutdown, stops and cleans up the Telegram bot.
+
+    Args:
+        app: FastAPI application instance.
     """
     logger.info("Starting Telegram bot in polling mode...")
     bot: Application = create_bot()
@@ -34,7 +37,7 @@ async def lifespan(app: FastAPI):
     app.state.bot = bot
     logger.info("Telegram bot started")
 
-    yield  # Application is now ready to serve requests
+    yield
 
     logger.info("Stopping Telegram bot polling...")
     await bot.updater.stop()
@@ -44,7 +47,14 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
-    """Factory to create and configure the FastAPI app."""
+    """Create and configure FastAPI application instance.
+
+    Configures logging, sets up application metadata, lifespan handler,
+    health check endpoint, and includes the Telegram router.
+
+    Returns:
+        Configured FastAPI application.
+    """
     configure_logging()
 
     app = FastAPI(
@@ -56,7 +66,11 @@ def create_app() -> FastAPI:
 
     @app.get("/healthz")
     async def healthz() -> dict:
-        """Health check endpoint."""
+        """Health check endpoint.
+
+                Returns:
+                    Dictionary with status key indicating app health.
+        """
         return {"status": "ok"}
 
     app.include_router(telegram_router)

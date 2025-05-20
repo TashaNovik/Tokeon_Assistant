@@ -9,22 +9,39 @@ logger = logging.getLogger(__name__)
 
 @lru_cache(maxsize=None)
 def get_model():
+    """Load and cache the multilingual SentenceTransformer model.
+
+        Returns:
+            SentenceTransformer: Pretrained embedding model.
+    """
     return SentenceTransformer("intfloat/multilingual-e5-large")
 
 def chunking(input_file, name):
+    """Split a text file into large and small chunks, embed them, and create PointStructs.
+
+        Large chunks preserve main section meaning, small chunks are for fine-grained search.
+
+        Args:
+            input_file: Path to the text file to process.
+            name: Document name to assign in the payload.
+
+        Returns:
+            A dictionary with keys "Large" and "Small" containing lists of PointStructs,
+            or None if the file is not found.
+        """
     logger.info(f"chunking {input_file}")
     small_chunk_size = 300
     small_chunk_overlap = 80
     large_chunk_size = 2500
     large_chunk_overlap = 400
 
-    # Задаем параметры крупного чанка для сохранения основного смысла раздела
+
     large_splitter = RecursiveCharacterTextSplitter(
         chunk_size=large_chunk_size,
         chunk_overlap=large_chunk_overlap,
         separators=['\n\nГлава ', '\n\nРаздел ', '\n\nСтатья ', '\nПункт ', '\n\n', '\n'])
 
-    # Задаем параметры малого чанка, по которому будем искать лучшие совпадения
+
     small_splitter = RecursiveCharacterTextSplitter(
         chunk_size=small_chunk_size,
         chunk_overlap=small_chunk_overlap,
@@ -37,7 +54,7 @@ def chunking(input_file, name):
         print(f"Ошибка: файл {input_file} не найден!")
         return
 
-    # Разбиваем текст на большие чанки
+
     large_chunks = large_splitter.split_text(text)
 
     points_small = []
@@ -80,6 +97,14 @@ def chunking(input_file, name):
 
 
 def knowledge_base_runner(directory):
+    """Traverse directory to find all .txt files and return their names and paths.
+
+        Args:
+            directory: Relative path to the base directory to scan.
+
+        Returns:
+            Dictionary mapping file base names (without extension) to their full file paths.
+    """
     txt_files = {}
     base_dir = os.path.join(os.path.dirname(__file__), directory)
 

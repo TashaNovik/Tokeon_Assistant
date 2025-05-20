@@ -9,22 +9,45 @@ logger = logging.getLogger(__name__)
 
 @lru_cache(maxsize=None)
 def get_model():
+    """
+    Load and cache the SentenceTransformer model for multilingual embeddings.
+
+    Returns:
+        SentenceTransformer: Initialized SentenceTransformer model.
+    """
     return SentenceTransformer("intfloat/multilingual-e5-large")
 
+
 def chunking(input_file, name):
+    """
+    Splits a text file into large and small chunks,
+    computes their embeddings, and creates point lists for indexing.
+
+    Args:
+        input_file (str): Path to the text file to be processed.
+        name (str): Document name (used in the payload of points).
+
+    Returns:
+        dict: Dictionary with two lists of points:
+            {
+                "Large": list of PointStruct for large chunks,
+                "Small": list of PointStruct for small chunks
+            }
+        Returns None if the file is not found.
+    """
     logger.info(f"chunking {input_file}")
     small_chunk_size = 300
     small_chunk_overlap = 80
     large_chunk_size = 2500
     large_chunk_overlap = 400
 
-    # Задаем параметры крупного чанка для сохранения основного смысла раздела
+
     large_splitter = RecursiveCharacterTextSplitter(
         chunk_size=large_chunk_size,
         chunk_overlap=large_chunk_overlap,
         separators=['\n\nГлава ', '\n\nРаздел ', '\n\nСтатья ', '\nПункт ', '\n\n', '\n'])
 
-    # Задаем параметры малого чанка, по которому будем искать лучшие совпадения
+
     small_splitter = RecursiveCharacterTextSplitter(
         chunk_size=small_chunk_size,
         chunk_overlap=small_chunk_overlap,
@@ -37,7 +60,7 @@ def chunking(input_file, name):
         print(f"Ошибка: файл {input_file} не найден!")
         return
 
-    # Разбиваем текст на большие чанки
+
     large_chunks = large_splitter.split_text(text)
 
     points_small = []
@@ -49,6 +72,7 @@ def chunking(input_file, name):
             small_chunks = [large_chunk]
         else:
             small_chunks = small_splitter.split_text(large_chunk)
+
         large_embedding = model.encode(large_chunk).tolist()
 
         points_large.append(PointStruct(
@@ -57,7 +81,7 @@ def chunking(input_file, name):
             payload={
                 "document_name": name,
                 "text": large_chunk,
-                "parent_id": i    
+                "parent_id": i
             }
         ))
         large_id = i
@@ -80,6 +104,18 @@ def chunking(input_file, name):
 
 
 def knowledge_base_runner(directory):
+    """
+    Scans the specified directory (or file) and returns a dictionary of
+    text file names (without extension) and their full paths.
+
+    Args:
+        directory (str): Relative path to a directory or a file.
+
+    Returns:
+        dict: Dictionary where the key is the filename without .txt,
+              and the value is the full file path.
+              If a .txt file is passed, returns a dictionary with one element.
+    """
     txt_files = {}
     base_dir = os.path.join(os.path.dirname(__file__), directory)
 
