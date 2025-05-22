@@ -8,6 +8,8 @@
 
 new_venv/
 myenv/
+venv
+.venv
 
 .idea/
 
