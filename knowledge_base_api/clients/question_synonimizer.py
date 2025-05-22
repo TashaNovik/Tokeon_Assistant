@@ -5,6 +5,8 @@ from collections import namedtuple
 import logging
 from os.path import abspath
 
+from knowledge_base_api.clients.ModelNotFoundError import ModelNotFoundError
+
 logger = logging.getLogger(__name__)
 
 # Monkey-patch for pymorphy2 compatibility on Python >=3.11
@@ -78,3 +80,39 @@ def learning_synonims(file_path):
     return processed_sentences
 
 
+# Синонимизация вопроса
+def synonimize_question(question, model):
+    question_tokens = preprocess(question)
+    synonymized_question = []
+    for word in question_tokens:
+        if word in model.wv:
+            synonyms = model.wv.most_similar(word, topn=2)
+            synonymized_question.append((word, synonyms))
+        else:
+            synonymized_question.append((word, []))
+    return synonymized_question
+
+
+def result_question(question):
+    questions = []
+    logger.info(f"Searching model at path: {abspath(model_path)}")
+    if not os.path.exists(model_path):
+        logger.error("model does not exist")
+        raise ModelNotFoundError(
+            "FastText model and context are missing. "
+            "Please run initial ingestion to build the knowledge base context and train the model."
+        )
+
+    model = FastText.load(model_path)
+
+    synonyms = synonimize_question(question, model)
+    synonymized_question = []
+    for word, word_synonyms in synonyms:
+        synonymized_question.append(word)  # Добавляем исходное слово
+        if word_synonyms:  # Если есть синонимы
+            # Добавляем первые 2 синонима из word_synonyms, можно сократить до 1
+            synonymized_question.extend([syn[0] for syn in word_synonyms[:2]])
+    synonymized_question = list(set(synonymized_question))
+    synonymized_question = " ".join(synonymized_question)
+    questions.append(question + " " + synonymized_question)
+    return synonymized_question

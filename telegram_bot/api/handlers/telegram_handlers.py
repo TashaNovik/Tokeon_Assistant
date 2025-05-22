@@ -9,8 +9,8 @@ from telegram.ext import (
     filters
 )
 from telegram_bot.config import settings # Предполагается, что settings.telegram.token существует
+from telegram_bot.clients.tokeon_assistant_client import TokeonAssistantClient
 import logging
-import httpx
 import os
 
 # Настройка логирования, если еще не настроено глобально
@@ -19,6 +19,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+tokeon_assistant_client = TokeonAssistantClient()
 
 # Состояния для ConversationHandler
 ASKING_QUESTION = 1 # Было ASKING
@@ -121,7 +122,6 @@ async def ask_receive_question(update: Update, context: ContextTypes.DEFAULT_TYP
     chat_id = update.message.chat_id # Для возможной отправки ошибок или доп. сообщений
 
     try:
-        # ask_assistant_via_api теперь должен возвращать словарь с 'answer' и 'answer_id'
         assistant_response_data = await ask_assistant_via_api(question)
     except Exception as e:
         logger.error(f"Assistant service failed for question '{question}'", exc_info=e)
@@ -177,62 +177,18 @@ async def ask_assistant_via_api(question: str) -> dict | None:
     """
     Отправляет вопрос на API ассистента и возвращает словарь с 'answer' и 'answer_id'.
     """
-    base_url = os.getenv("TOKEON_ASSISTANT_REST_API_URL", "http://tokeon_assistant_rest_api:8001")
-    url = f"{base_url}/answers" # Убедитесь, что это правильный эндпоинт для ЗАПРОСА ответа
-    data = {"query": question}
-    logger.info(f"Sending question to assistant API: {url} with data: {data}")
-
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=data, timeout=httpx.Timeout(60, connect=10))
-
-        response.raise_for_status() # Вызовет исключение для 4xx/5xx кодов
-        answer_data = response.json()
-        # Убедитесь, что ваше API возвращает 'answer' и 'answer_id'
-        if 'answer' in answer_data and 'answer_id' in answer_data:
-            logger.info(f"Received from assistant API: {answer_data}")
-            return answer_data
-        else:
-            logger.error(f"Assistant API response missing 'answer' or 'answer_id'. Received: {answer_data}")
-            # Можно вернуть структуру с None, чтобы обработать выше
-            return {"answer": None, "answer_id": answer_data.get("answer_id")}
-
-    except httpx.HTTPStatusError as e:
-        logger.error(f"HTTP error from assistant API: {e.response.status_code} - {e.response.text}")
-        # Попытка извлечь answer_id из тела ошибки, если он там есть
-        try:
-            error_data = e.response.json()
-            return {"answer": None, "answer_id": error_data.get("answer_id")}
-        except: # noqa E722
-            pass
-        raise # Перевыбрасываем исключение, если не смогли извлечь ID
+        return await tokeon_assistant_client.ask_question(question)
     except Exception as e:
         logger.error(f"Error calling assistant API: {e}")
         raise
 
-
 async def send_feedback_to_api(answer_id: str, reaction: str, comment: str | None = None) -> bool:
-    """Отправляет фидбек на ваш бэкенд."""
-    base_url = os.getenv("TOKEON_ASSISTANT_REST_API_URL", "http://tokeon_assistant_rest_api:8001")
-    feedback_url = f"{base_url}/answers/{answer_id}/feedback"
-    payload = {"feedback_reaction": reaction}
-    # Ваш API ожидает "comment": "string1", даже если он пустой, может быть "comment": ""
-    payload["comment"] = comment if comment is not None else ""
-
-    logger.info(f"Sending feedback to {feedback_url} with payload: {payload}")
+    """Отправляет фидбек на API ассистента."""
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(feedback_url, json=payload, timeout=httpx.Timeout(60, connect=10))
-            response.raise_for_status()
-            logger.info(f"Feedback sent for answer_id {answer_id}. Status: {response.status_code}")
-            return True
-    except httpx.RequestError as e:
-        logger.error(f"Error sending feedback for answer_id {answer_id}: {e}")
-        if hasattr(e, 'response') and e.response is not None:
-            logger.error(f"Feedback API Response status: {e.response.status_code}, body: {e.response.text}")
-        return False
+        return await tokeon_assistant_client.send_feedback(answer_id, reaction, comment)
     except Exception as e:
-        logger.error(f"Unexpected error sending feedback: {e}")
+        logger.error(f"Error sending feedback to assistant API: {e}")
         return False
 
 

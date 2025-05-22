@@ -1,12 +1,16 @@
 import asyncio
 from asyncio import to_thread
 import os
-from sentence_transformers import SentenceTransformer
 from qdrant_client import AsyncQdrantClient
+import logging
 
+from knowledge_base_api.clients.chunking import get_model
 
-model = SentenceTransformer("intfloat/multilingual-e5-large")
+logger = logging.getLogger(__name__)
 
+from knowledge_base_api.clients.question_synonimizer import lemmatize_ru, result_question
+
+model = get_model()
 
 async def async_search(client, collection, question_embedding):
     return await client.search(
@@ -16,7 +20,6 @@ async def async_search(client, collection, question_embedding):
         score_threshold=0.25,
         with_payload=["parent_id"]
     )
-
 
 async def question_preparation(question):
     client = AsyncQdrantClient(
@@ -60,3 +63,12 @@ async def question_preparation(question):
         await client.close()
 
     return "\n".join([t[0].payload["text"] for t in texts])
+
+async def process_question(raw_question):
+    lemmas = await to_thread(lemmatize_ru, raw_question)
+    logger.info(f"Question lemmas: {lemmas}")
+    top_question = result_question(" ".join(lemmas))
+    logger.info(f"Top question: {top_question}")
+    question = await question_preparation(top_question)
+    return question
+

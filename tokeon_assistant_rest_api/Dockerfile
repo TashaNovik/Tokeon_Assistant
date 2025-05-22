@@ -8,14 +8,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY ./tokeon_assistant_rest_api/requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt  --extra-index-url https://download.pytorch.org/whl/cpu
-
-RUN python - <<'EOF'
-import nltk
-nltk.download('stopwords')
-nltk.download('punkt')
-nltk.download('punkt_tab')
-EOF
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY ./tokeon_assistant_rest_api /app/tokeon_assistant_rest_api
 

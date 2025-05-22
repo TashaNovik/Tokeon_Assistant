@@ -42,7 +42,7 @@ services:
       uvicorn knowledge_base_api.main:app
       --host 0.0.0.0
       --port 8002
-    environment: #
+    environment:
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
       - CONTEXT_DIR=/app/data/context
@@ -58,21 +58,12 @@ services:
       - "8001:8001"
     volumes:
       - ./tokeon_assistant_rest_api:/app/tokeon_assistant_rest_api
-      - context:/app/data/context
-      - fasttext:/app/data/fasttext
-      - huggingface_cache:/app/huggingface_cache
-    depends_on:
-      - qdrant
     command: >
       uvicorn tokeon_assistant_rest_api.main:app
       --host 0.0.0.0
       --port 8001
-    environment: #
-      - QDRANT_HOST=qdrant
-      - QDRANT_PORT=6333
-      - CONTEXT_DIR=/app/data/context
-      - FASTTEXT_MODEL_DIR=/app/data/fasttext
-      - SENTENCE_TRANSFORMERS_HOME=/app/huggingface_cache
+    environment:
+      - KNOWLEDGE_BASE_API_URL=http://knowledge_base_api:8002
 
 volumes:
   qdrant_data:

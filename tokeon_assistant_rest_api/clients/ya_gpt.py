@@ -1,21 +1,19 @@
 from asyncio import to_thread
 from tokeon_assistant_rest_api.clients.api import get_token, send_request_to_yagpt
-from tokeon_assistant_rest_api.clients.question_synonimizer import result_question, lemmatize_ru
-from tokeon_assistant_rest_api.clients.question_processor import question_preparation
+from tokeon_assistant_rest_api.clients.knowledge_base_client import KnowledgeBaseClient
 import json
 from tokeon_assistant_rest_api.config import settings
 import logging
 
 logger = logging.getLogger(__name__)
 
+# Initialize the Knowledge Base client
+kb_client = KnowledgeBaseClient()
+
 async def answer_from_knowledge_base(raw_question: str) -> str:
     logger.info(f"Question: {raw_question}")
-    lemmas = await to_thread(lemmatize_ru, raw_question)
-    logger.info(f"Question lemmas: {lemmas}")
-    top_question = result_question(" ".join(lemmas))
-    logger.info(f"Top question: {top_question}")
-    kb_data_for_question = await question_preparation(top_question)  # await
-    logger.info(f"KB data for question: {kb_data_for_question}")
+    kb_data_for_question = await kb_client.prepare_question(raw_question)
+    logger.info(f"KB data for question: {kb_data_for_question[:100]}")
     iam = await to_thread(get_token, settings.ya_gpt.api_key)
 
     answer = await to_thread(
