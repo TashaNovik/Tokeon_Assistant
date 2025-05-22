@@ -144,7 +144,7 @@ async def ask_receive_question(update: Update, context: ContextTypes.DEFAULT_TYP
             context.user_data['feedback_message_id_to_edit'] = feedback_msg.message_id
             return AWAITING_FEEDBACK_COMMENT # Ожидаем комментарий к ошибке
         else:
-            await update.message.reply_text("⚠️ Ассистент не смог дать ответ, и ID ответа не получен.")
+            await update.message.reply_text("⚠️ Ассистент не смог дать ответ на данный вопрос. Пожалуйста, попробуйте позже.")
             return ConversationHandler.END
 
 
