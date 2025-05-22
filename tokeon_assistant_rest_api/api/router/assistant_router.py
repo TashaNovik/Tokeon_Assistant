@@ -1,6 +1,8 @@
 import logging
 import uuid  # Используем для генерации уникальных ID
 from fastapi import APIRouter, HTTPException, status, Response
+
+from tokeon_assistant_rest_api.clients.ModelNotFoundError import ModelNotFoundError
 from tokeon_assistant_rest_api.models.models import AskResponse, AskRequest, FeedbackRequest
 from tokeon_assistant_rest_api      .clients.ya_gpt import answer_from_knowledge_base
 assistant_router = APIRouter()
@@ -32,7 +34,12 @@ async def ask_assistant(request_data: AskRequest):
         else:
             logging.warning(f"No answer found in knowledge base for answer_id '{generated_answer_id}")
         return AskResponse(answer_id=generated_answer_id, answer=answer_text)
-
+    except ModelNotFoundError as e:
+        logging.error(f"Model not found for answer_id '{generated_answer_id}': {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="База знаний обновляется, пожалуйста подождите."
+        )
     except Exception as e:
         logging.error(f"Error processing question for potential answer_id '{generated_answer_id}': {e}", exc_info=True)
         raise HTTPException(

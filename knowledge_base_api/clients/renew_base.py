@@ -4,7 +4,7 @@ import json
 from functools import partial
 from knowledge_base_api.clients.chunking import knowledge_base_runner, chunking
 from knowledge_base_api.clients.qdrant_sender import async_send
-from knowledge_base_api.clients.question_synonimizer import learning_synonims
+from knowledge_base_api.clients.question_synonimizer import learning_synonims, learning_model, model_path
 
 import logging
 logger = logging.getLogger(__name__)
@@ -21,13 +21,23 @@ async def main(kb_dir=None):
 
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(None, partial(context, kb_dir))
-    context(kb_dir)
 
+    full_ctx = context(kb_dir)
+    if not full_ctx:
+        raise RuntimeError(
+            "FastText model and context are missing. "
+            "Please run initial ingestion to build the knowledge base context and train the model."
+        )
+
+    if os.path.exists(model_path):
+        logger.info(f"Model already exists at {model_path}. Removing and retraining...")
+        os.remove(model_path)
+
+    learning_model(full_ctx)
 
 def context(kb_dir):
-    context_dir = os.path.join(os.path.dirname(__file__),
-                               "..", "..", "context")
-    context_dir = os.path.abspath(context_dir)
+    context_dir = os.getenv("CONTEXT_DIR",
+                            os.path.abspath(os.path.join(os.path.dirname(__file__),"..", "..", "data", "context")))
     os.makedirs(context_dir, exist_ok=True)
 
     context_file = os.path.join(context_dir, "context.json")
@@ -41,7 +51,7 @@ def context(kb_dir):
         full_context += context
     with open(context_file, 'w', encoding='utf-8') as f:
         json.dump(full_context, f, ensure_ascii=False, indent=2)
-
+    return full_context
 
 if __name__ == "__main__":
     asyncio.run(main())
