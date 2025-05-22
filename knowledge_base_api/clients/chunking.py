@@ -70,7 +70,7 @@ def chunking(input_file, name):
                 vector=small_embedding,
                 payload={
                     "document_name": name,
-                    "text": None,
+                    "text": small_chunk,
                     "parent_id": large_id
                 }
             ))
