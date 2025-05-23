@@ -1,16 +1,25 @@
 FROM python:3.11-slim
 
-WORKDIR /app
+WORKDIR /tokeon_assistant_rest_api
+
+ENV PYTHONPATH=/tokeon_assistant_rest_api
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends build-essential \
     && pip install --upgrade pip \
     && rm -rf /var/lib/apt/lists/*
 
-COPY ./tokeon_assistant_rest_api/requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+COPY ../tokeon_assistant_rest_api/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY ./tokeon_assistant_rest_api /app/tokeon_assistant_rest_api
+RUN python - <<'EOF'
+import nltk
+nltk.download('stopwords')
+nltk.download('punkt')
+nltk.download('punkt_tab')
+EOF
+
+COPY ./tokeon_assistant_rest_api .
 
 EXPOSE 8001
 

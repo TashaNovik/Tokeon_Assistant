@@ -70,20 +70,9 @@ def learning_model(processed_sentences):
 
 
 def learning_synonims(file_path):
-    import nltk
-    # Явная загрузка punkt с логированием пути
-    try:
-        nltk.data.find('tokenizers/punkt')
-    except LookupError:
-        logger.info(f"Downloading 'punkt' to: {nltk.data.path}")
-        nltk.download('punkt')
     with open(file_path, "r", encoding="utf-8") as f:
         text = f.read()
-    try:
-        sentences = sent_tokenize(text, language='russian')
-    except LookupError:
-        nltk.download('punkt')
-        sentences = sent_tokenize(text, language='russian')
+    sentences = sent_tokenize(text, language='russian')
     processed_sentences = [preprocess(sentence) for sentence in sentences]
     return processed_sentences
 

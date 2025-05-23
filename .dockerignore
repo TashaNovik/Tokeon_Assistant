@@ -2,28 +2,13 @@ qdrant_storage/
 knowledge_base/
 context/
 fasttext/
-**/*.log
+*.log
 
-**/__pycache__/
- **/*.py[cod]
-**/build/
+__pycache__/
+*.pyc
+build/
 data/
 models/
 
-telegram_bot/.env
-knowledge_base_api/.env
-tokeon_assistant_rest_api/.env
+.env
 .git/
-.gitignore
-.gitattributes
-
-**/venv/
-**/.venv/
-**/env/
-**/ENV/
-
-**/.pytest_cache/
-**/.cache/
-
-**/.vscode/
-**/.idea/

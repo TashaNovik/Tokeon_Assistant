@@ -1,17 +1,12 @@
 import logging
-from fastapi import APIRouter, HTTPException, status, UploadFile, File, Body
-from pydantic import BaseModel
-from knowledge_base_api.clients.ModelNotFoundError import ModelNotFoundError
-from knowledge_base_api.clients.question_processor import process_question
+from fastapi import APIRouter, HTTPException, status, UploadFile, File
+
 from knowledge_base_api.clients.renew_base import main as renew_knowledge_base
 import zipfile
 import tempfile
 
 logger = logging.getLogger(__name__)
 knowledge_base_router = APIRouter()
-
-class QuestionRequest(BaseModel):
-    question: str
 
 @knowledge_base_router.post(
     "/knowledge-base/renew",
@@ -42,38 +37,6 @@ async def update_knowledge_base(zip_file: UploadFile = File(...)):
         await renew_knowledge_base(data_folder)  # Вызов функции main для обновления базы знаний
         return {"message": "База знаний успешно обновлена."}
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
-
-@knowledge_base_router.post(
-    "/knowledge-base/prepare-question",
-    status_code=status.HTTP_200_OK,
-    summary="Подготовить данные из базы знаний для вопроса",
-    description="Получает и обрабатывает данные из базы знаний на основе вопроса пользователя."
-)
-async def prepare_question(request: QuestionRequest):
-    """
-    Endpoint to prepare relevant knowledge base data for a question.
-    """
-    try:
-        logger.info(f"Preparing knowledge base data for question: {request.question}")
-
-        result_text = await process_question(request.question)
-
-        logger.info(f"Prepared knowledge base data: {result_text[:100]}...")
-
-        return {"data": result_text}
-
-    except ModelNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="База знаний обновляется, пожалуйста подождите."
-        )
-            
-    except Exception as e:
-        logger.error(f"Error preparing knowledge base data: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)

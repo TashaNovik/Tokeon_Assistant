@@ -18,7 +18,7 @@ def configure_logging() -> None:
     )
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan_context(app: FastAPI):
     """
     Manage the application lifecycle:
       - Start the Telegram bot in polling mode on startup
@@ -51,8 +51,10 @@ def create_app() -> FastAPI:
         title="Telegram Bot",
         description="Telegram bot for answering user questions from a knowledge base using GPT",
         version="1.0.0",
-        lifespan=lifespan,
     )
+    
+    # Устанавливаем контекст lifespan
+    app.router.lifespan_context = lifespan_context
 
     @app.get("/healthz")
     async def healthz() -> dict:

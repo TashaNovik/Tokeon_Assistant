@@ -1,4 +1,5 @@
 import yaml
+import os
 from pydantic import BaseModel
 
 class YaGPTConfig(BaseModel):
@@ -16,7 +17,11 @@ class Settings(BaseModel):
     logging: LoggingConfig
 
     @classmethod
-    def load(cls, path: str = "tokeon_assistant_rest_api/config.yaml") -> "Settings":
+    def load(cls, path: str = None) -> "Settings":
+        if path is None:
+            # Use path relative to the current module
+            path = os.path.join(os.path.dirname(__file__), "config.yaml")
+        
         with open(path, "r") as f:
             data = yaml.safe_load(f)
         return cls(**data)

@@ -8,16 +8,17 @@
 
 new_venv/
 myenv/
-venv
-.venv
 
 .idea/
 
 *.env
+venv
+./venv
 
 */config.yaml
 
 __pycache__
+.pytest_cache
 
 *~
 knowledge_base/

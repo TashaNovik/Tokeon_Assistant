@@ -32,6 +32,3 @@ ____________________________________________________________
 
 В данном случае автосозданная дефолтная
 один запрос в яндекс lite стоит примерно 20 копеек
-
-Установка зависимостей для проекта:
-pip install -r tokeon_assistant_rest_api/requirements.txt -r knowledge_base_api/requirements.txt -r telegram_bot/requirements.txt  --extra-index-url https://download.pytorch.org/whl/cpu
