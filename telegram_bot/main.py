@@ -8,52 +8,70 @@ from telegram.ext import Application
 from telegram_bot.api.router.webhook import router as telegram_router
 from telegram_bot.api.handlers.telegram_handlers import create_bot
 
-logger = logging.getLogger(__name__)
+# ---------------------------------------------------------------------------
+# Logging configuration
+# ---------------------------------------------------------------------------
 
 def configure_logging() -> None:
-    """Configure logging for the application."""
+    """Sets up global logging configuration and suppresses verbose telegram logs."""
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+    logging.getLogger("telegram").setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Lifespan: bot startup/shutdown with FastAPI app
+# ---------------------------------------------------------------------------
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Manage application lifecycle: start and stop Telegram bot.
-
-    On startup, initializes and starts the Telegram bot in polling mode.
-    On shutdown, stops and cleans up the Telegram bot.
+    """Starts the Telegram bot in polling mode on FastAPI startup.
 
     Args:
-        app: FastAPI application instance.
+        app (FastAPI): The FastAPI app instance.
+
+    Yields:
+        None
     """
-    logger.info("Starting Telegram bot in polling mode...")
+    logger.info("Starting Telegram bot in polling mode…")
+
     bot: Application = create_bot()
     await bot.initialize()
     await bot.start()
-    await bot.bot.delete_webhook()
-    # Commands are set in create_bot() via post_init
-    asyncio.create_task(bot.updater.start_polling(poll_interval=3))
-    app.state.bot = bot
+    await bot.bot.delete_webhook(drop_pending_updates=True)
+
+    # Note: `Application.run_polling()` is not yet available in PTB v20+
+    # This uses updater as a temporary workaround
+    polling_task = asyncio.create_task(bot.updater.start_polling(poll_interval=3))
+
+    app.state.bot = bot  # can be accessed in webhook routes if needed
     logger.info("Telegram bot started")
 
-    yield
+    try:
+        yield
+    finally:
+        logger.info("Stopping Telegram bot polling…")
+        polling_task.cancel()
+        await bot.updater.stop()
+        await bot.stop()
+        await bot.shutdown()
+        logger.info("Telegram bot stopped")
 
-    logger.info("Stopping Telegram bot polling...")
-    await bot.updater.stop()
-    await bot.stop()
-    await bot.shutdown()
-    logger.info("Telegram bot stopped")
 
+# ---------------------------------------------------------------------------
+# FastAPI app factory
+# ---------------------------------------------------------------------------
 
 def create_app() -> FastAPI:
-    """Create and configure FastAPI application instance.
-
-    Configures logging, sets up application metadata, lifespan handler,
-    health check endpoint, and includes the Telegram router.
+    """Creates and configures a FastAPI application instance.
 
     Returns:
-        Configured FastAPI application.
+        FastAPI: Configured app with routes and Telegram bot integration.
     """
     configure_logging()
 
@@ -65,12 +83,8 @@ def create_app() -> FastAPI:
     )
 
     @app.get("/healthz")
-    async def healthz() -> dict:
-        """Health check endpoint.
-
-                Returns:
-                    Dictionary with status key indicating app health.
-        """
+    async def healthz() -> dict[str, str]:
+        """Health check endpoint."""
         return {"status": "ok"}
 
     app.include_router(telegram_router)

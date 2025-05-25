@@ -1,0 +1,6 @@
+fastapi
+alembic
+SQLAlchemy
+asyncpg
+python-telegram-bot
+httpx
