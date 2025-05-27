@@ -1,3 +1,15 @@
+
+"""
+telegram_handlers.py — version using messages + ratings.message_id.
+
+Handles Telegram bot interaction:
+- /start, /help, /ask, /cancel
+- inline feedback (👍😐👎)
+- comment collection
+- assistant API call (stub or real)
+"""
+
+
 from __future__ import annotations
 
 import os
@@ -41,9 +53,11 @@ _MAX_LEN = 1_000
 _CTRL_RE = re.compile(r"[\u0000-\u001F\u007F-\u009F\u202A-\u202F]")
 
 
+
 def clean(text: str | None) -> str:
     """
     Removes control characters and trims text to a maximum length.
+
 
     Args:
         text (str | None): Input text.
@@ -185,18 +199,42 @@ async def ask_receive_question(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -
     return ConversationHandler.END
 
 
-# ───── Assistant API call ─────────────────────────────────────────────────
-async def ask_assistant_via_api(question: str) -> dict | None:
-    """
-    Sends a question to the assistant service and returns the result.
 
-    Args:
-        question (str): The user's question text.
 
-    Returns:
-        dict | None: A response dictionary with keys like "answer" and "answer_id".
-    """
-    return await tokeon_assistant_client.ask_question(question)
+# ───── ORIGINAL API IMPLEMENTATION (DO NOT DELETE) ────────────────────────
+ async def ask_assistant_via_api(question: str) -> dict | None:
+     base_url = os.getenv("TOKEON_ASSISTANT_REST_API_URL",
+                          "http://tokeon_assistant_rest_api:8001")
+     url = f"{base_url}/answers"
+     data = {"query": question}
+     logger.info(f"Sending question to assistant API: {url} with data: {data}")
+     try:
+         async with httpx.AsyncClient() as client:
+             response = await client.post(
+                 url, json=data,
+                 timeout=httpx.Timeout(60, connect=10)
+             )
+         response.raise_for_status()
+         answer_data = response.json()
+         if 'answer' in answer_data and 'answer_id' in answer_data:
+             logger.info(f"Received from assistant API: {answer_data}")
+             return answer_data
+         else:
+             logger.error("Assistant API response missing keys. Got: %s", answer_data)
+             return {"answer": None, "answer_id": answer_data.get("answer_id")}
+     except httpx.HTTPStatusError as e:
+         logger.error("HTTP error from assistant API: %s - %s",
+                      e.response.status_code, e.response.text)
+         try:
+             err = e.response.json()
+             return {"answer": None, "answer_id": err.get("answer_id")}
+         except Exception:
+             pass
+         raise
+     except Exception as e:
+         logger.error("Error calling assistant API: %s", e)
+         raise
+
 
 
 # ───── Fallback for unknown text ──────────────────────────────────────────

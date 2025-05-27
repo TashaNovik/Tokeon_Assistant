@@ -2,6 +2,7 @@ import inspect
 from collections import namedtuple
 import logging
 from os.path import abspath
+from knowledge_base_api.clients.chunking import knowledge_base_runner
 
 from knowledge_base_api.clients.ModelNotFoundError import ModelNotFoundError
 
@@ -123,8 +124,6 @@ def learning_synonims(file_path):
 
 
 
-# Синонимизация вопроса
-
 def synonimize_question(question, model):
     """
     Retrieves synonyms for each word in the question using a trained FastText model.
@@ -216,3 +215,4 @@ def context(base_directory):
             json.dump(full_context, f, ensure_ascii=False, indent=2)
 
     return full_context
+
