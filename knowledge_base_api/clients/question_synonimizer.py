@@ -122,10 +122,9 @@ def learning_synonims(file_path):
     return processed_sentences
 
 
-<<<<<<< HEAD
-=======
+
 # Синонимизация вопроса
->>>>>>> origin/main
+
 def synonimize_question(question, model):
     """
     Retrieves synonyms for each word in the question using a trained FastText model.
@@ -182,8 +181,6 @@ def result_question(question):
     synonymized_question = " ".join(synonymized_question)
     questions.append(question + " " + synonymized_question)
     return synonymized_question
-<<<<<<< HEAD
-
 
 def context(base_directory):
     """
@@ -219,6 +216,3 @@ def context(base_directory):
             json.dump(full_context, f, ensure_ascii=False, indent=2)
 
     return full_context
-
-=======
->>>>>>> origin/main

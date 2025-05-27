@@ -8,6 +8,18 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage:z
 
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456789
+      POSTGRES_DB: assistant
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
   telegram_bot:
     build:
       context: .
@@ -17,12 +29,15 @@ services:
       - "8000:8000"
     volumes:
       - ./telegram_bot:/app/telegram_bot
+      - ./db:/app/db 
+    working_dir: /app/telegram_bot
     command: >
       uvicorn telegram_bot.main:app
       --host 0.0.0.0
       --port 8000
     environment:
       - TOKEON_ASSISTANT_REST_API_URL=http://tokeon_assistant_rest_api:8001
+      - PYTHONPATH=/app
 
   knowledge_base_api:
     build:
@@ -65,8 +80,24 @@ services:
     environment:
       - KNOWLEDGE_BASE_API_URL=http://knowledge_base_api:8002
 
+  db_alembic:
+    build:
+      context: .
+      dockerfile: db/Dockerfile
+    container_name: db_alembic
+    volumes:
+      - ./db:/app/db
+      - ./alembic.ini:/app/alembic.ini
+      - ./alembic:/app/alembic
+    working_dir: /app
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      - postgres
+
 volumes:
   qdrant_data:
   context:
   fasttext:
   huggingface_cache:
+  pg_data:
