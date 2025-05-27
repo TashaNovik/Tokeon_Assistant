@@ -2,6 +2,7 @@ import inspect
 from collections import namedtuple
 import logging
 from os.path import abspath
+from knowledge_base_api.clients.chunking import knowledge_base_runner
 
 from knowledge_base_api.clients.ModelNotFoundError import ModelNotFoundError
 
@@ -122,10 +123,6 @@ def learning_synonims(file_path):
     return processed_sentences
 
 
-<<<<<<< HEAD
-=======
-# Синонимизация вопроса
->>>>>>> origin/main
 def synonimize_question(question, model):
     """
     Retrieves synonyms for each word in the question using a trained FastText model.
@@ -182,8 +179,6 @@ def result_question(question):
     synonymized_question = " ".join(synonymized_question)
     questions.append(question + " " + synonymized_question)
     return synonymized_question
-<<<<<<< HEAD
-
 
 def context(base_directory):
     """
@@ -220,5 +215,3 @@ def context(base_directory):
 
     return full_context
 
-=======
->>>>>>> origin/main
