@@ -3,29 +3,14 @@ from collections import namedtuple
 import logging
 from os.path import abspath
 
-from knowledge_base_api.clients.ModelNotFoundError import ModelNotFoundError
-
 logger = logging.getLogger(__name__)
 
 # Monkey-patch for pymorphy2 compatibility on Python >=3.11
 # Provide getargspec signature that matches argparse
 ArgSpec = namedtuple('ArgSpec', 'args varargs varkw defaults')
-
-
 def getargspec(func):
-    """
-    Compatibility patch for pymorphy2 on Python 3.11+, replaces inspect.getargspec.
-
-    Args:
-        func (callable): Function to analyze.
-
-    Returns:
-        ArgSpec: Named tuple with function arguments.
-    """
     spec = inspect.getfullargspec(func)
     return ArgSpec(args=spec.args, varargs=spec.varargs, varkw=spec.varkw, defaults=spec.defaults)
-
-
 inspect.getargspec = getargspec
 
 import re
@@ -37,20 +22,17 @@ from nltk.tokenize import sent_tokenize
 from nltk.corpus import stopwords
 from gensim.models import FastText
 from nltk.data import find
+from tokeon_assistant_rest_api.clients.chunking import knowledge_base_runner
 
-model_dir = os.getenv("FASTTEXT_MODEL_DIR",
-                      os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "fasttext")))
-model_path = os.path.join(model_dir, "fasttext.model")
 
 def lemmatize_ru(text):
-    """
-    Lemmatizes Russian text and returns a list of normalized words.
+    """Lemmatize Russian text into a list of normalized word forms.
 
-    Args:
-        text (str): Input text.
+        Args:
+            text: Input Russian text.
 
-    Returns:
-        list[str]: List of lemmas (normalized word forms).
+        Returns:
+            List of lemmatized words.
     """
     morph = MorphAnalyzer()
     words = re.findall(r'\b\w+\b', text.lower())
@@ -59,14 +41,15 @@ def lemmatize_ru(text):
 
 
 def preprocess(sentence):
-    """
-    Preprocesses a sentence: lemmatization, stop-word and non-alphabetic token filtering.
+    """Preprocess a sentence by lemmatizing and removing stopwords and non-alphabetic tokens.
 
-    Args:
-        sentence (str): Input sentence.
+        Downloads necessary NLTK data if missing.
 
-    Returns:
-        list[str]: List of cleaned and lemmatized words.
+        Args:
+            sentence: Input sentence text.
+
+        Returns:
+            List of processed tokens.
     """
     current_dir = os.path.dirname(__file__)
     nltk_dir = os.path.join(current_dir, "nltk")
@@ -85,15 +68,15 @@ def preprocess(sentence):
     return filtered_words
 
 
-def learning_model(processed_sentences):
-    """
-    Trains a FastText model on the processed sentences and saves it.
 
-    Args:
-        processed_sentences (list[list[str]]): List of sentences where each is a list of tokens.
+def learning_model(processed_sentences):
+    """Train a FastText model on the given tokenized sentences and save it locally.
+
+            Args:
+                processed_sentences: List of tokenized and preprocessed sentences.
     """
     logger.info("Learning model... by sentences: " + str(len(processed_sentences)))
-    os.makedirs(model_dir, exist_ok=True)
+    os.makedirs("fasttext", exist_ok=True)
     model = FastText(
         vector_size=200,
         window=5,
@@ -102,18 +85,18 @@ def learning_model(processed_sentences):
     )
     model.build_vocab(processed_sentences)
     model.train(processed_sentences, total_examples=len(processed_sentences), epochs=10)
+    model_path = os.path.join("fasttext", "fasttext.model")
     model.save(model_path)
 
 
 def learning_synonims(file_path):
-    """
-    Reads text from a file, splits it into sentences, and preprocesses them.
+    """Read a text file, split into sentences, preprocess them for synonym model training.
 
-    Args:
-        file_path (str): Path to the text file.
+        Args:
+            file_path: Path to the text file.
 
-    Returns:
-        list[list[str]]: List of preprocessed sentences with tokens.
+        Returns:
+            List of tokenized and preprocessed sentences.
     """
     with open(file_path, "r", encoding="utf-8") as f:
         text = f.read()
@@ -122,20 +105,15 @@ def learning_synonims(file_path):
     return processed_sentences
 
 
-<<<<<<< HEAD
-=======
-# Синонимизация вопроса
->>>>>>> origin/main
 def synonimize_question(question, model):
-    """
-    Retrieves synonyms for each word in the question using a trained FastText model.
+    """Generate synonyms for each token in the question using a FastText model.
 
     Args:
-        question (str): Input question.
-        model (FastText): Trained FastText model.
+        question: Input question string.
+        model: Trained FastText model.
 
     Returns:
-        list[tuple(str, list)]: List of tuples (word, list of similar words with scores).
+        List of tuples of (word, list of synonyms with similarity scores).
     """
     question_tokens = preprocess(question)
     synonymized_question = []
@@ -149,27 +127,37 @@ def synonimize_question(question, model):
 
 
 def result_question(question):
-    """
-    Constructs an expanded question with synonyms, training the model if needed.
+    """Generate a synonym-augmented version of the question using the FastText model.
+
+    Loads the FastText model, training it if missing, and returns
+    the original question extended with the most similar synonyms.
 
     Args:
-        question (str): Input question.
-
-    Returns:
-        str: String with the original question and added synonyms.
+        question: Input question string.
 
     Raises:
-        RuntimeError: If the model and context are missing.
+        RuntimeError: If neither model nor context is available to build it.
+
+    Returns:
+        Synonym-augmented question string.
     """
     questions = []
+    model_dir = "fasttext"
+    model_path = os.path.join(model_dir, "fasttext.model")
     logger.info(f"Searching model at path: {abspath(model_path)}")
     if not os.path.exists(model_path):
         logger.error("model does not exist")
-        raise ModelNotFoundError(
-            "FastText model and context are missing. "
-            "Please run initial ingestion to build the knowledge base context and train the model."
-        )
+        full_ctx = context(None)
+        if not full_ctx:
+            raise RuntimeError(
+                "FastText model and context are missing. "
+                "Please run initial ingestion to build the knowledge base context and train the model."
+            )
 
+        logger.error("model does not exist. Learning model...")
+        learning_model(full_ctx)
+
+    logger.info(f"Loading model from path: {abspath(model_path)}")
     model = FastText.load(model_path)
 
     synonyms = synonimize_question(question, model)
@@ -177,23 +165,27 @@ def result_question(question):
     for word, word_synonyms in synonyms:
         synonymized_question.append(word)
         if word_synonyms:
+
             synonymized_question.extend([syn[0] for syn in word_synonyms[:2]])
     synonymized_question = list(set(synonymized_question))
     synonymized_question = " ".join(synonymized_question)
     questions.append(question + " " + synonymized_question)
     return synonymized_question
-<<<<<<< HEAD
+
 
 
 def context(base_directory):
-    """
-    Loads or creates context from knowledge base files and saves to context.json.
+    """Load or build the context from knowledge base files for training the FastText model.
+
+    If a context JSON file exists and no base_directory is provided, loads from it.
+    Otherwise, reads text files from the knowledge base directory, preprocesses,
+    and saves the context to a JSON file.
 
     Args:
-        base_directory (str or None): Path to the knowledge base. If None, loads from context.json.
+        base_directory: Directory containing knowledge base text files or None.
 
     Returns:
-        list: List of tokenized sentences for the entire context.
+        List of preprocessed sentences representing the full context.
     """
     logger.info(f"Searching context files in the base directory: {base_directory}")
     context_dir = os.path.join(os.getcwd(), "context")
@@ -220,5 +212,3 @@ def context(base_directory):
 
     return full_context
 
-=======
->>>>>>> origin/main

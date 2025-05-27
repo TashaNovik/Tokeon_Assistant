@@ -9,32 +9,26 @@ logger = logging.getLogger(__name__)
 
 @lru_cache(maxsize=None)
 def get_model():
-    """
-    Load and cache the SentenceTransformer model for multilingual embeddings.
+    """Load and cache the multilingual SentenceTransformer model.
 
-    Returns:
-        SentenceTransformer: Initialized SentenceTransformer model.
+        Returns:
+            SentenceTransformer: Pretrained embedding model.
     """
     return SentenceTransformer("intfloat/multilingual-e5-large")
 
-
 def chunking(input_file, name):
-    """
-    Splits a text file into large and small chunks,
-    computes their embeddings, and creates point lists for indexing.
+    """Split a text file into large and small chunks, embed them, and create PointStructs.
 
-    Args:
-        input_file (str): Path to the text file to be processed.
-        name (str): Document name (used in the payload of points).
+        Large chunks preserve main section meaning, small chunks are for fine-grained search.
 
-    Returns:
-        dict: Dictionary with two lists of points:
-            {
-                "Large": list of PointStruct for large chunks,
-                "Small": list of PointStruct for small chunks
-            }
-        Returns None if the file is not found.
-    """
+        Args:
+            input_file: Path to the text file to process.
+            name: Document name to assign in the payload.
+
+        Returns:
+            A dictionary with keys "Large" and "Small" containing lists of PointStructs,
+            or None if the file is not found.
+        """
     logger.info(f"chunking {input_file}")
     small_chunk_size = 300
     small_chunk_overlap = 80
@@ -72,7 +66,6 @@ def chunking(input_file, name):
             small_chunks = [large_chunk]
         else:
             small_chunks = small_splitter.split_text(large_chunk)
-
         large_embedding = model.encode(large_chunk).tolist()
 
         points_large.append(PointStruct(
@@ -81,7 +74,7 @@ def chunking(input_file, name):
             payload={
                 "document_name": name,
                 "text": large_chunk,
-                "parent_id": i
+                "parent_id": i    
             }
         ))
         large_id = i
@@ -94,7 +87,7 @@ def chunking(input_file, name):
                 vector=small_embedding,
                 payload={
                     "document_name": name,
-                    "text": small_chunk,
+                    "text": None,
                     "parent_id": large_id
                 }
             ))
@@ -104,17 +97,13 @@ def chunking(input_file, name):
 
 
 def knowledge_base_runner(directory):
-    """
-    Scans the specified directory (or file) and returns a dictionary of
-    text file names (without extension) and their full paths.
+    """Traverse directory to find all .txt files and return their names and paths.
 
-    Args:
-        directory (str): Relative path to a directory or a file.
+        Args:
+            directory: Relative path to the base directory to scan.
 
-    Returns:
-        dict: Dictionary where the key is the filename without .txt,
-              and the value is the full file path.
-              If a .txt file is passed, returns a dictionary with one element.
+        Returns:
+            Dictionary mapping file base names (without extension) to their full file paths.
     """
     txt_files = {}
     base_dir = os.path.join(os.path.dirname(__file__), directory)

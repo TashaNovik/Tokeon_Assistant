@@ -10,6 +10,18 @@ import logging
 logger = logging.getLogger(__name__)
 
 async def main(kb_dir=None):
+    """
+    Main async entry point for processing the knowledge base:
+
+    - Determines the knowledge‑base directory if not provided.
+    - Scans and loads all knowledge‑base files.
+    - Splits each file into chunks and uploads the data to Qdrant.
+    - Refreshes the context by calling :func:`context` in a separate executor.
+
+    Args:
+        kb_dir (str | None): Path to the knowledge‑base directory.
+            If *None*, the default ``knowledge_base`` directory is used.
+    """
     if kb_dir is None:
         kb_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "knowledge_base"))
     logger.info(f"Process kb_dir: {kb_dir}")
@@ -20,7 +32,13 @@ async def main(kb_dir=None):
         await async_send(filechunks, name, rewrite=True)
 
     loop = asyncio.get_event_loop()
+
     await loop.run_in_executor(None, partial(context, kb_dir))
+<<<<<<< HEAD
+
+    context(kb_dir)
+=======
+>>>>>>> origin/main
 
     full_ctx = context(kb_dir)
     if not full_ctx:
@@ -36,8 +54,20 @@ async def main(kb_dir=None):
     learning_model(full_ctx)
 
 def context(kb_dir):
+<<<<<<< HEAD
+    """
+    Collects context from knowledge‑base files and stores it as JSON.
+
+    Args:
+        kb_dir (str): Path to the knowledge‑base directory.
+    """
+    context_dir = os.path.join(os.path.dirname(__file__),
+                               "..", "..", "context")
+    context_dir = os.path.abspath(context_dir)
+=======
     context_dir = os.getenv("CONTEXT_DIR",
                             os.path.abspath(os.path.join(os.path.dirname(__file__),"..", "..", "data", "context")))
+>>>>>>> origin/main
     os.makedirs(context_dir, exist_ok=True)
 
     context_file = os.path.join(context_dir, "context.json")
