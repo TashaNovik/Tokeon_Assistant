@@ -1,5 +1,22 @@
+<<<<<<< HEAD
 """
 telegram_handlers.py — version using messages + ratings.message_id.
+=======
+from telegram import Update, BotCommand, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    ConversationHandler,
+    ContextTypes,
+    MessageHandler,
+    CallbackQueryHandler, # Добавлено
+    filters
+)
+from telegram_bot.config import settings # Предполагается, что settings.telegram.token существует
+from telegram_bot.clients.tokeon_assistant_client import TokeonAssistantClient
+import logging
+import os
+>>>>>>> origin/main
 
 Handles Telegram bot interaction:
 - /start, /help, /ask, /cancel
@@ -45,9 +62,22 @@ logging.getLogger("telegram").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
+<<<<<<< HEAD
 # ───── Text cleaning ──────────────────────────────────────────────────────
 _MAX_LEN = 1_000
 _CTRL_RE = re.compile(r"[\u0000-\u001F\u007F-\u009F\u202A-\u202F]")
+=======
+tokeon_assistant_client = TokeonAssistantClient()
+
+# Состояния для ConversationHandler
+ASKING_QUESTION = 1 # Было ASKING
+AWAITING_FEEDBACK_CHOICE = 2 # Новое состояние для ожидания нажатия кнопки фидбека
+AWAITING_FEEDBACK_COMMENT = 3 # Новое состояние для ожидания текстового комментария
+
+# URL вашего API для фидбека (используется в send_feedback_to_api)
+# ASSISTANT_API_BASE_URL = os.getenv("TOKEON_ASSISTANT_REST_API_URL", "http://tokeon_assistant_rest_api:8001")
+# Перенесем получение base_url в сами функции, чтобы избежать глобальных переменных здесь, если не нужны
+>>>>>>> origin/main
 
 
 def clean(text: str | None) -> str:
@@ -98,6 +128,7 @@ async def ask_receive_question(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -
     user = update.effective_user
 
     try:
+<<<<<<< HEAD
         assistant_response = await ask_assistant_via_api(question)
     except Exception as exc:  # noqa: BLE001
         logger.exception("Assistant API error: %s", exc)
@@ -132,10 +163,37 @@ async def ask_receive_question(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -
     ]]
     await update.message.reply_text("Оцените ответ:", reply_markup=InlineKeyboardMarkup(kb))
     return ConversationHandler.END
+=======
+        assistant_response_data = await ask_assistant_via_api(question)
+    except Exception as e:
+        logger.error(f"Assistant service failed for question '{question}'", exc_info=e)
+        await update.message.reply_text(
+            "⚠️ К сожалению, произошла ошибка при получении ответа. Пожалуйста, попробуйте позже."
+        )
+        return ConversationHandler.END
+
+    if not assistant_response_data or assistant_response_data.get("answer") is None:
+        answer_id_for_error = assistant_response_data.get("answer_id") if assistant_response_data else None
+        if answer_id_for_error:
+            context.user_data['current_answer_id'] = answer_id_for_error
+            context.user_data['feedback_message_id_to_edit'] = None # Нечего редактировать для ответа
+            feedback_prompt_text = "Ассистент не смог дать ответ. Хотите сообщить об ошибке?"
+            keyboard = [
+                [InlineKeyboardButton("👎 Сообщить об ошибке", callback_data=f"feedback:{answer_id_for_error}:error_report")]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            feedback_msg = await update.message.reply_text(feedback_prompt_text, reply_markup=reply_markup)
+            context.user_data['feedback_message_id_to_edit'] = feedback_msg.message_id
+            return AWAITING_FEEDBACK_COMMENT # Ожидаем комментарий к ошибке
+        else:
+            await update.message.reply_text("⚠️ Ассистент не смог дать ответ на данный вопрос. Пожалуйста, попробуйте позже.")
+            return ConversationHandler.END
+>>>>>>> origin/main
 
 
 # ───── Assistant stub for development ─────────────────────────────────────
 async def ask_assistant_via_api(question: str) -> dict | None:
+<<<<<<< HEAD
     """Stub for assistant API."""
     return {"answer": f"Заглушка: ответ на '{question}'.", "answer_id": "dummy"}
 
@@ -173,6 +231,24 @@ async def ask_assistant_via_api(question: str) -> dict | None:
 #     except Exception as e:
 #         logger.error("Error calling assistant API: %s", e)
 #         raise
+=======
+    """
+    Отправляет вопрос на API ассистента и возвращает словарь с 'answer' и 'answer_id'.
+    """
+    try:
+        return await tokeon_assistant_client.ask_question(question)
+    except Exception as e:
+        logger.error(f"Error calling assistant API: {e}")
+        raise
+
+async def send_feedback_to_api(answer_id: str, reaction: str, comment: str | None = None) -> bool:
+    """Отправляет фидбек на API ассистента."""
+    try:
+        return await tokeon_assistant_client.send_feedback(answer_id, reaction, comment)
+    except Exception as e:
+        logger.error(f"Error sending feedback to assistant API: {e}")
+        return False
+>>>>>>> origin/main
 
 
 # ───── Fallback for unknown text ──────────────────────────────────────────

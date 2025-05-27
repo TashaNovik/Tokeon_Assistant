@@ -3,6 +3,8 @@ from collections import namedtuple
 import logging
 from os.path import abspath
 
+from knowledge_base_api.clients.ModelNotFoundError import ModelNotFoundError
+
 logger = logging.getLogger(__name__)
 
 # Monkey-patch for pymorphy2 compatibility on Python >=3.11
@@ -35,8 +37,10 @@ from nltk.tokenize import sent_tokenize
 from nltk.corpus import stopwords
 from gensim.models import FastText
 from nltk.data import find
-from tokeon_assistant_rest_api.clients.chunking import knowledge_base_runner
 
+model_dir = os.getenv("FASTTEXT_MODEL_DIR",
+                      os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "fasttext")))
+model_path = os.path.join(model_dir, "fasttext.model")
 
 def lemmatize_ru(text):
     """
@@ -89,7 +93,7 @@ def learning_model(processed_sentences):
         processed_sentences (list[list[str]]): List of sentences where each is a list of tokens.
     """
     logger.info("Learning model... by sentences: " + str(len(processed_sentences)))
-    os.makedirs("fasttext", exist_ok=True)
+    os.makedirs(model_dir, exist_ok=True)
     model = FastText(
         vector_size=200,
         window=5,
@@ -98,7 +102,6 @@ def learning_model(processed_sentences):
     )
     model.build_vocab(processed_sentences)
     model.train(processed_sentences, total_examples=len(processed_sentences), epochs=10)
-    model_path = os.path.join("fasttext", "fasttext.model")
     model.save(model_path)
 
 
@@ -119,6 +122,10 @@ def learning_synonims(file_path):
     return processed_sentences
 
 
+<<<<<<< HEAD
+=======
+# Синонимизация вопроса
+>>>>>>> origin/main
 def synonimize_question(question, model):
     """
     Retrieves synonyms for each word in the question using a trained FastText model.
@@ -155,22 +162,14 @@ def result_question(question):
         RuntimeError: If the model and context are missing.
     """
     questions = []
-    model_dir = "fasttext"
-    model_path = os.path.join(model_dir, "fasttext.model")
     logger.info(f"Searching model at path: {abspath(model_path)}")
     if not os.path.exists(model_path):
         logger.error("model does not exist")
-        full_ctx = context(None)
-        if not full_ctx:
-            raise RuntimeError(
-                "FastText model and context are missing. "
-                "Please run initial ingestion to build the knowledge base context and train the model."
-            )
+        raise ModelNotFoundError(
+            "FastText model and context are missing. "
+            "Please run initial ingestion to build the knowledge base context and train the model."
+        )
 
-        logger.error("model does not exist. Learning model...")
-        learning_model(full_ctx)
-
-    logger.info(f"Loading model from path: {abspath(model_path)}")
     model = FastText.load(model_path)
 
     synonyms = synonimize_question(question, model)
@@ -183,6 +182,7 @@ def result_question(question):
     synonymized_question = " ".join(synonymized_question)
     questions.append(question + " " + synonymized_question)
     return synonymized_question
+<<<<<<< HEAD
 
 
 def context(base_directory):
@@ -220,3 +220,5 @@ def context(base_directory):
 
     return full_context
 
+=======
+>>>>>>> origin/main

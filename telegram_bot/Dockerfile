@@ -1,18 +1,16 @@
 FROM python:3.11-slim
 
-WORKDIR /telegram_bot
-
-ENV PYTHONPATH=/telegram_bot
+WORKDIR /app
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends build-essential \
     && pip install --upgrade pip \
     && rm -rf /var/lib/apt/lists/*
 
-COPY ../telegram_bot/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY ./telegram_bot/requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
-COPY ./telegram_bot .
+COPY ./telegram_bot /app/telegram_bot
 
 EXPOSE 8000
 

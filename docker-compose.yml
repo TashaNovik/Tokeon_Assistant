@@ -16,7 +16,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./:/telegram_bot
+      - ./telegram_bot:/app/telegram_bot
     command: >
       uvicorn telegram_bot.main:app
       --host 0.0.0.0
@@ -32,18 +32,22 @@ services:
     ports:
       - "8002:8002"
     volumes:
-      - ./:/knowledge_base_api
-      - context:/knowledge_base_api/context
-      - fasttext:/knowledge_base_api/fasttext
+      - ./knowledge_base_api:/app/knowledge_base_api
+      - context:/app/data/context
+      - fasttext:/app/data/fasttext
+      - huggingface_cache:/app/huggingface_cache
     depends_on:
       - qdrant
     command: >
       uvicorn knowledge_base_api.main:app
       --host 0.0.0.0
       --port 8002
-    environment: #
+    environment:
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
+      - CONTEXT_DIR=/app/data/context
+      - FASTTEXT_MODEL_DIR=/app/data/fasttext
+      - SENTENCE_TRANSFORMERS_HOME=/app/huggingface_cache
 
   tokeon_assistant_rest_api:
     build:
@@ -53,20 +57,16 @@ services:
     ports:
       - "8001:8001"
     volumes:
-      - ./:/tokeon_assistant_rest_api
-      - context:/tokeon_assistant_rest_api/context
-      - fasttext:/tokeon_assistant_rest_api/fasttext
-    depends_on:
-      - qdrant
+      - ./tokeon_assistant_rest_api:/app/tokeon_assistant_rest_api
     command: >
       uvicorn tokeon_assistant_rest_api.main:app
       --host 0.0.0.0
       --port 8001
-    environment: #
-      - QDRANT_HOST=qdrant
-      - QDRANT_PORT=6333
+    environment:
+      - KNOWLEDGE_BASE_API_URL=http://knowledge_base_api:8002
 
 volumes:
   qdrant_data:
   context:
   fasttext:
+  huggingface_cache:
