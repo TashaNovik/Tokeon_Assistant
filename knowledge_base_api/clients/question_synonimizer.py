@@ -123,6 +123,7 @@ def learning_synonims(file_path):
     return processed_sentences
 
 
+
 def synonimize_question(question, model):
     """
     Retrieves synonyms for each word in the question using a trained FastText model.

@@ -8,7 +8,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY ./knowledge_base_api/requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir -r /app/requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu \
+    --index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
 RUN python - <<'EOF'
 import nltk

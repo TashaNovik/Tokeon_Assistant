@@ -4,3 +4,6 @@ SQLAlchemy
 asyncpg
 python-telegram-bot
 httpx
+sqlalchemy>=1.4
+alembic>=1.10
+psycopg2-binary>=2.9
