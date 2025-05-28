@@ -1,4 +1,3 @@
-
 """
 telegram_handlers.py — version using messages + ratings.message_id.
 
@@ -8,7 +7,6 @@ Handles Telegram bot interaction:
 - comment collection
 - assistant API call (stub or real)
 """
-
 
 from __future__ import annotations
 
@@ -52,12 +50,9 @@ logger = logging.getLogger(__name__)
 _MAX_LEN = 1_000
 _CTRL_RE = re.compile(r"[\u0000-\u001F\u007F-\u009F\u202A-\u202F]")
 
-
-
 def clean(text: str | None) -> str:
     """
     Removes control characters and trims text to a maximum length.
-
 
     Args:
         text (str | None): Input text.
@@ -66,7 +61,6 @@ def clean(text: str | None) -> str:
         str: Cleaned and trimmed text.
     """
     return _CTRL_RE.sub("", text or "").strip()[:_MAX_LEN]
-
 
 def md(text: str) -> str:
     """
@@ -80,13 +74,11 @@ def md(text: str) -> str:
     """
     return escape_markdown(text, version=2)
 
-
 # ───── Conversation handler state ─────────────────────────────────────────
 ASKING_QUESTION = 1
 AWAITING_FEEDBACK_COMMENT = 2
 
 tokeon_assistant_client = TokeonAssistantClient()
-
 
 # ───── Basic command handlers ─────────────────────────────────────────────
 async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
@@ -98,7 +90,6 @@ async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         ctx (ContextTypes.DEFAULT_TYPE): Context for the command.
     """
     await update.message.reply_text("👋 Привет!\nИспользуй /ask, чтобы задать вопрос.")
-
 
 async def help_command(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     """
@@ -115,7 +106,6 @@ async def help_command(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         "/cancel — отменить операцию"
     )
 
-
 async def cancel_conversation(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     """
     Cancels the ongoing conversation when the /cancel command is used.
@@ -129,7 +119,6 @@ async def cancel_conversation(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
     """
     await update.message.reply_text("❌ Операция отменена.")
     return ConversationHandler.END
-
 
 # ───── /ask flow ──────────────────────────────────────────────────────────
 async def ask_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
@@ -145,7 +134,6 @@ async def ask_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     """
     await update.message.reply_text("📝 Пожалуйста, отправьте ваш вопрос:")
     return ASKING_QUESTION
-
 
 async def ask_receive_question(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     """
@@ -198,44 +186,39 @@ async def ask_receive_question(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -
     await update.message.reply_text("Оцените ответ:", reply_markup=InlineKeyboardMarkup(kb))
     return ConversationHandler.END
 
-
-
-
 # ───── ORIGINAL API IMPLEMENTATION (DO NOT DELETE) ────────────────────────
- async def ask_assistant_via_api(question: str) -> dict | None:
-     base_url = os.getenv("TOKEON_ASSISTANT_REST_API_URL",
-                          "http://tokeon_assistant_rest_api:8001")
-     url = f"{base_url}/answers"
-     data = {"query": question}
-     logger.info(f"Sending question to assistant API: {url} with data: {data}")
-     try:
-         async with httpx.AsyncClient() as client:
-             response = await client.post(
-                 url, json=data,
-                 timeout=httpx.Timeout(60, connect=10)
-             )
-         response.raise_for_status()
-         answer_data = response.json()
-         if 'answer' in answer_data and 'answer_id' in answer_data:
-             logger.info(f"Received from assistant API: {answer_data}")
-             return answer_data
-         else:
-             logger.error("Assistant API response missing keys. Got: %s", answer_data)
-             return {"answer": None, "answer_id": answer_data.get("answer_id")}
-     except httpx.HTTPStatusError as e:
-         logger.error("HTTP error from assistant API: %s - %s",
-                      e.response.status_code, e.response.text)
-         try:
-             err = e.response.json()
-             return {"answer": None, "answer_id": err.get("answer_id")}
-         except Exception:
-             pass
-         raise
-     except Exception as e:
-         logger.error("Error calling assistant API: %s", e)
-         raise
-
-
+async def ask_assistant_via_api(question: str) -> dict | None:
+    base_url = os.getenv("TOKEON_ASSISTANT_REST_API_URL",
+                         "http://tokeon_assistant_rest_api:8001")
+    url = f"{base_url}/answers"
+    data = {"query": question}
+    logger.info(f"Sending question to assistant API: {url} with data: {data}")
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                url, json=data,
+                timeout=httpx.Timeout(60, connect=10)
+            )
+        response.raise_for_status()
+        answer_data = response.json()
+        if 'answer' in answer_data and 'answer_id' in answer_data:
+            logger.info(f"Received from assistant API: {answer_data}")
+            return answer_data
+        else:
+            logger.error("Assistant API response missing keys. Got: %s", answer_data)
+            return {"answer": None, "answer_id": answer_data.get("answer_id")}
+    except httpx.HTTPStatusError as e:
+        logger.error("HTTP error from assistant API: %s - %s",
+                     e.response.status_code, e.response.text)
+        try:
+            err = e.response.json()
+            return {"answer": None, "answer_id": err.get("answer_id")}
+        except Exception:
+            pass
+        raise
+    except Exception as e:
+        logger.error("Error calling assistant API: %s", e)
+        raise
 
 # ───── Fallback for unknown text ──────────────────────────────────────────
 async def echo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
@@ -247,7 +230,6 @@ async def echo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         ctx (ContextTypes.DEFAULT_TYPE): Context with user data.
     """
     await update.message.reply_text("🤖 Я не распознал команду. /help")
-
 
 # ───── Bot application setup ──────────────────────────────────────────────
 def create_bot() -> Application:
