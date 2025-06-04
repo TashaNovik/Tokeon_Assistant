@@ -31,7 +31,6 @@ services:
       - ./telegram_bot:/app/telegram_bot
       - ./db:/app/db
       - ./telegram_bot/config.yaml:/app/telegram_bot/config.yaml
-    working_dir: /app/telegram_bot
     command: >
       uvicorn telegram_bot.main:app
       --host 0.0.0.0
@@ -90,14 +89,11 @@ services:
       - ./db:/app/db
       - ./alembic.ini:/app/alembic.ini
       - ./alembic:/app/alembic
-      - ./wait-for-it.sh:/usr/local/bin/wait-for-it.sh
     working_dir: /app
     environment:
       - PYTHONPATH=/app
     depends_on:
       - postgres
-    command: >
-      /usr/local/bin/wait-for-it postgres:5432 -- alembic upgrade head
 
 volumes:
   qdrant_data:
