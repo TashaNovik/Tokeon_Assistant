@@ -29,7 +29,8 @@ services:
       - "8000:8000"
     volumes:
       - ./telegram_bot:/app/telegram_bot
-      - ./db:/app/db 
+      - ./db:/app/db
+      - ./telegram_bot/config.yaml:/app/telegram_bot/config.yaml
     working_dir: /app/telegram_bot
     command: >
       uvicorn telegram_bot.main:app
@@ -48,8 +49,8 @@ services:
       - "8002:8002"
     volumes:
       - ./knowledge_base_api:/app/knowledge_base_api
-      - context:/app/data/context
-      - fasttext:/app/data/fasttext
+      - context:/app/knowledge_base_api/context
+      - fasttext:/app/knowledge_base_api/fasttext
       - huggingface_cache:/app/huggingface_cache
     depends_on:
       - qdrant
@@ -60,8 +61,8 @@ services:
     environment:
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
-      - CONTEXT_DIR=/app/data/context
-      - FASTTEXT_MODEL_DIR=/app/data/fasttext
+      - CONTEXT_DIR=/app/knowledge_base_api/context
+      - FASTTEXT_MODEL_DIR=/app/knowledge_base_api/fasttext
       - SENTENCE_TRANSFORMERS_HOME=/app/huggingface_cache
 
   tokeon_assistant_rest_api:
@@ -89,11 +90,14 @@ services:
       - ./db:/app/db
       - ./alembic.ini:/app/alembic.ini
       - ./alembic:/app/alembic
+      - ./wait-for-it.sh:/usr/local/bin/wait-for-it.sh
     working_dir: /app
     environment:
       - PYTHONPATH=/app
     depends_on:
       - postgres
+    command: >
+      /usr/local/bin/wait-for-it postgres:5432 -- alembic upgrade head
 
 volumes:
   qdrant_data:
